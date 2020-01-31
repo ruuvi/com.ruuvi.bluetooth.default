@@ -22,7 +22,7 @@ class DecodeFormat3 implements LeScanResult.RuuviTagDecoder {
         double pressureHi = data[4 + offset] & 0xFF;
         double pressureLo = data[5 + offset] & 0xFF;
         tag.setPressure(pressureHi * 256 + 50000 + pressureLo);
-        tag.setPressure(tag.getPressure() != null ? tag.getPressure() : 0.0 / 100.0);
+        tag.setPressure(tag.getPressure() != null ? tag.getPressure() / 100.0 : 0.0 );
 
         tag.setAccelX((data[6 + offset] << 8 | data[7 + offset] & 0xFF) / 1000.0);
         tag.setAccelY((data[8 + offset] << 8 | data[9 + offset] & 0xFF) / 1000.0);

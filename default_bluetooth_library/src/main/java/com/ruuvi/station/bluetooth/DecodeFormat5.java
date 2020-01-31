@@ -12,7 +12,7 @@ class DecodeFormat5 implements LeScanResult.RuuviTagDecoder {
         tag.setTemperature((data[1 + offset] << 8 | data[2 + offset] & 0xFF) / 200d);
         tag.setHumidity(((data[3 + offset] & 0xFF) << 8 | data[4 + offset] & 0xFF) / 400d);
         tag.setPressure((double) ((data[5 + offset] & 0xFF) << 8 | data[6 + offset] & 0xFF) + 50000);
-        tag.setPressure(tag.getPressure() != null ? tag.getPressure() : 0.0 / 100.0);
+        tag.setPressure(tag.getPressure() != null ? tag.getPressure() / 100.0 : 0.0);
 
         tag.setAccelX((data[7 + offset] << 8 | data[8 + offset] & 0xFF) / 1000d);
         tag.setAccelY((data[9 + offset] << 8 | data[10 + offset] & 0xFF) / 1000d);

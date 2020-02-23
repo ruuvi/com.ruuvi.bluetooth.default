@@ -12,7 +12,7 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.os.ParcelUuid;
 import android.util.Log;
-
+import com.ruuvi.station.bluetooth.decoder.LeScanResult;
 import java.util.ArrayList;
 import java.util.List;
 

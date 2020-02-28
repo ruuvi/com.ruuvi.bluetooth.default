@@ -1,29 +1,31 @@
 package com.ruuvi.station.bluetooth.decoder;
 
 import com.ruuvi.station.bluetooth.FoundRuuviTag;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
-class DecodeFormat3 implements LeScanResult.RuuviTagDecoder {
-
+public class DecodeFormat3 implements LeScanResult.RuuviTagDecoder {
     @Override
     public FoundRuuviTag decode(byte[] data, int offset) {
         FoundRuuviTag tag = new FoundRuuviTag();
         tag.setDataFormat(3);
         tag.setHumidity(((float) (data[1 + offset] & 0xFF)) / 2.0);
 
-        double temperatureSign = (data[2 + offset] >> 7) & 1;
-        double temperatureBase = (data[2 + offset] & 0x7F);
+        int temperatureSign = (data[2 + offset] >> 7) & 1;
+        int temperatureBase = (data[2 + offset] & 0x7F);
         double temperatureFraction = (data[3 + offset]) / 100.0;
         tag.setTemperature(temperatureBase + temperatureFraction);
         if (temperatureSign == 1) {
-            tag.setTemperature(tag.getTemperature() != null ? tag.getTemperature() : 0.0 * -1);
+            tag.setTemperature(tag.getTemperature() != null ? tag.getTemperature() * -1 : 0.0 );
         }
 
         double pressureHi = data[4 + offset] & 0xFF;
         double pressureLo = data[5 + offset] & 0xFF;
         tag.setPressure(pressureHi * 256 + 50000 + pressureLo);
-        tag.setPressure(tag.getPressure() != null ? tag.getPressure() / 100.0 : 0.0 );
+        tag.setPressure(tag.getPressure() != null ? tag.getPressure() : 0.0 );
 
         tag.setAccelX((data[6 + offset] << 8 | data[7 + offset] & 0xFF) / 1000.0);
         tag.setAccelY((data[8 + offset] << 8 | data[9 + offset] & 0xFF) / 1000.0);

@@ -3,8 +3,9 @@ package com.ruuvi.station.bluetooth.decoder;
 import com.ruuvi.station.bluetooth.FoundRuuviTag;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import static com.ruuvi.station.bluetooth.decoder.FoundRuuviTagKt.validateValues;
 
-class DecodeFormat5 implements LeScanResult.RuuviTagDecoder {
+public class DecodeFormat5 implements LeScanResult.RuuviTagDecoder {
     // offset = 7
     @Override
     public FoundRuuviTag decode(byte[] data, int offset) {
@@ -13,7 +14,7 @@ class DecodeFormat5 implements LeScanResult.RuuviTagDecoder {
         tag.setTemperature((data[1 + offset] << 8 | data[2 + offset] & 0xFF) / 200d);
         tag.setHumidity(((data[3 + offset] & 0xFF) << 8 | data[4 + offset] & 0xFF) / 400d);
         tag.setPressure((double) ((data[5 + offset] & 0xFF) << 8 | data[6 + offset] & 0xFF) + 50000);
-        tag.setPressure(tag.getPressure() != null ? tag.getPressure() / 100.0 : 0.0);
+        tag.setPressure(tag.getPressure() != null ? tag.getPressure() : 0.0);
 
         tag.setAccelX((data[7 + offset] << 8 | data[8 + offset] & 0xFF) / 1000d);
         tag.setAccelY((data[9 + offset] << 8 | data[10 + offset] & 0xFF) / 1000d);
@@ -27,17 +28,17 @@ class DecodeFormat5 implements LeScanResult.RuuviTagDecoder {
             tag.setTxPower((powerInfo & 0b11111) * 2 - 40.0);
         }
         tag.setMovementCounter(data[15 + offset] & 0xFF);
-        tag.setMeasurementSequenceNumber((data[17 + offset] & 0xFF) << 8 | data[16 + offset] & 0xFF);
+        tag.setMeasurementSequenceNumber((data[16 + offset] & 0xFF) << 8 | data[17 + offset] & 0xFF);
 
         // make it pretty
-        tag.setTemperature(round(tag.getTemperature() != null ? tag.getTemperature() : 0.0, 2));
-        tag.setHumidity(round(tag.getHumidity() != null ? tag.getHumidity() : 0.0, 2));
+        tag.setTemperature(round(tag.getTemperature() != null ? tag.getTemperature() : 0.0, 4));
+        tag.setHumidity(round(tag.getHumidity() != null ? tag.getHumidity() : 0.0, 4));
         tag.setPressure(round(tag.getPressure(), 2));
         tag.setVoltage(round(tag.getVoltage() != null ? tag.getVoltage() : 0.0, 4));
         tag.setAccelX(round(tag.getAccelX() != null ? tag.getAccelX() : 0.0, 4));
         tag.setAccelY(round(tag.getAccelY() != null ? tag.getAccelY() : 0.0, 4));
         tag.setAccelZ(round(tag.getAccelZ() != null ? tag.getAccelZ() : 0.0, 4));
-        return tag;
+        return validateValues(tag);
     }
 
     private static double round(double value, int places) {

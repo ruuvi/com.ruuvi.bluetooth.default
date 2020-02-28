@@ -13,7 +13,7 @@ class ScanForDevicesService : JobIntentService(){
         val bluetoothInteractor = BluetoothLibrary.getBluetoothInteractor()
         bluetoothInteractor.startScan()
         Timer( false).schedule(4000) {
-            bluetoothInteractor.stopScanning()
+            bluetoothInteractor.stopScanningFromBackground()
         }
     }
 

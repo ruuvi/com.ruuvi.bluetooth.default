@@ -12,37 +12,41 @@ import java.util.*
 class ScanningPeriodicReceiver: BroadcastReceiver(){
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.d("ScanningPeriodicReceiver.onReceive!")
+        var scanInterval = INTERVAL_DEFAULT
+        intent?.let {
+            scanInterval = it.getLongExtra(INTERVAL_EXTRA, INTERVAL_DEFAULT)
+        }
         ScanForDevicesService.enqueueWork(context)
-        scheduleNext(context)
+        scheduleNext(context, scanInterval)
     }
 
     companion object {
-        private var scanInterval = 0L
+        private const val INTERVAL_EXTRA = "INTERVAL"
+        private const val INTERVAL_DEFAULT = 60000L
 
         fun start(context: Context, interval: Long) {
-            Timber.d("ScanningPeriodicReceiver.start!")
-            scanInterval = interval
+            Timber.d("ScanningPeriodicReceiver.start! Interval = $interval ms")
             schedule(context, interval)
         }
 
-        fun scheduleNext(context: Context) {
+        fun scheduleNext(context: Context, scanInterval: Long) {
             schedule(context, scanInterval)
         }
 
         fun cancel(context: Context) {
             Timber.d("ScanningPeriodicReceiver.cancel!")
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarmManager.cancel(createPendingIntent(context))
+            alarmManager.cancel(createPendingIntent(context, INTERVAL_DEFAULT))
         }
 
-        private fun schedule(context: Context, delay: Long) {
-            Timber.d("ScanningPeriodicReceiver.schedule!")
+        private fun schedule(context: Context, scanInterval: Long) {
+            Timber.d("ScanningPeriodicReceiver.schedule! scanInterval = $scanInterval")
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
             val calendar = Calendar.getInstance()
-            calendar.timeInMillis = System.currentTimeMillis() + delay
+            calendar.timeInMillis = System.currentTimeMillis() + scanInterval
 
-            val alarmIntent = createPendingIntent(context)
+            val alarmIntent = createPendingIntent(context, scanInterval)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
@@ -55,9 +59,10 @@ class ScanningPeriodicReceiver: BroadcastReceiver(){
             }
         }
 
-        private fun createPendingIntent(context: Context): PendingIntent {
+        private fun createPendingIntent(context: Context, scanInterval: Long): PendingIntent {
             Timber.d("ScanningPeriodicReceiver.createPendingIntent")
             val intent = Intent(context, ScanningPeriodicReceiver::class.java)
+            intent.putExtra(INTERVAL_EXTRA, scanInterval)
             return PendingIntent.getBroadcast(context, 0, intent, 0)
         }
     }

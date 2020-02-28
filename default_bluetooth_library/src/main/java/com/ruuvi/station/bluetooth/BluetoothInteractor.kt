@@ -66,5 +66,10 @@ class BluetoothInteractor(
         ruuviRangeNotifier.stopScanning()
     }
 
+    fun stopScanningFromBackground() {
+        Timber.d("stopScanningFromBackground")
+        if (!isRunningInForeground) ruuviRangeNotifier.stopScanning()
+    }
+
     fun canScan() = ruuviRangeNotifier.canScan()
 }

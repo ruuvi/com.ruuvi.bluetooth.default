@@ -4,23 +4,19 @@ import android.app.Application
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 
 object BluetoothLibrary {
+    internal lateinit var bluetoothInteractor: BluetoothInteractor
+    internal val scanInterval
+        get() = bluetoothInteractor.settings.getBackgroundScanInterval()
+    val isInitialized
+        get() = this::bluetoothInteractor.isInitialized
 
-    private var bluetoothInteractor: BluetoothInteractor? = null
-
-    fun initLibrary(
+    fun getBluetoothInteractor(
             application: Application,
-            listner: IRuuviTagScanner.OnTagFoundListener,
-            settings: ScannerSettings? = null)
-    {
-        if (bluetoothInteractor == null)
-            bluetoothInteractor = BluetoothInteractor(application, listner)
-
-        settings?.let {
-            bluetoothInteractor?.settings = settings
+            onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
+            settings: ScannerSettings = ScannerSettings()): BluetoothInteractor {
+        if (!isInitialized) {
+            bluetoothInteractor = BluetoothInteractor(application, onTagsFoundListener, settings)
         }
-    }
-
-    fun getBluetoothInteractor() : BluetoothInteractor {
-        return bluetoothInteractor ?: throw Exception("BluetoothLibrary should be initialized!")
+        return bluetoothInteractor
     }
 }

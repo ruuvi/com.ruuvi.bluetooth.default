@@ -12,18 +12,14 @@ import java.util.*
 class ScanningPeriodicReceiver: BroadcastReceiver(){
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.d("ScanningPeriodicReceiver.onReceive!")
-        var scanInterval = INTERVAL_DEFAULT
-        intent?.let {
-            scanInterval = it.getLongExtra(INTERVAL_EXTRA, INTERVAL_DEFAULT)
+        if (BluetoothLibrary.isInitialized) {
+            var scanInterval = BluetoothLibrary.scanInterval
+            ScanForDevicesService.enqueueWork(context)
+            scheduleNext(context, scanInterval)
         }
-        ScanForDevicesService.enqueueWork(context)
-        scheduleNext(context, scanInterval)
     }
 
     companion object {
-        private const val INTERVAL_EXTRA = "INTERVAL"
-        private const val INTERVAL_DEFAULT = 60000L
-
         fun start(context: Context, interval: Long) {
             Timber.d("ScanningPeriodicReceiver.start! Interval = $interval ms")
             schedule(context, interval)
@@ -36,7 +32,7 @@ class ScanningPeriodicReceiver: BroadcastReceiver(){
         fun cancel(context: Context) {
             Timber.d("ScanningPeriodicReceiver.cancel!")
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarmManager.cancel(createPendingIntent(context, INTERVAL_DEFAULT))
+            alarmManager.cancel(createPendingIntent(context))
         }
 
         private fun schedule(context: Context, scanInterval: Long) {
@@ -46,7 +42,7 @@ class ScanningPeriodicReceiver: BroadcastReceiver(){
             val calendar = Calendar.getInstance()
             calendar.timeInMillis = System.currentTimeMillis() + scanInterval
 
-            val alarmIntent = createPendingIntent(context, scanInterval)
+            val alarmIntent = createPendingIntent(context)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
@@ -59,10 +55,9 @@ class ScanningPeriodicReceiver: BroadcastReceiver(){
             }
         }
 
-        private fun createPendingIntent(context: Context, scanInterval: Long): PendingIntent {
+        private fun createPendingIntent(context: Context): PendingIntent {
             Timber.d("ScanningPeriodicReceiver.createPendingIntent")
             val intent = Intent(context, ScanningPeriodicReceiver::class.java)
-            intent.putExtra(INTERVAL_EXTRA, scanInterval)
             return PendingIntent.getBroadcast(context, 0, intent, 0)
         }
     }

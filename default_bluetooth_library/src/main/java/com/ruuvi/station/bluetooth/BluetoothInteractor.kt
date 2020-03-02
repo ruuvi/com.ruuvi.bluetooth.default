@@ -1,16 +1,17 @@
 package com.ruuvi.station.bluetooth
 
 import android.app.Application
+import android.content.Intent
+import android.os.Build
 import com.ruuvi.station.bluetooth.util.Foreground
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import timber.log.Timber
 
 class BluetoothInteractor(
         private val application: Application,
-        private var onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener
+        private val onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
+        val settings: ScannerSettings = ScannerSettings()
 ) {
-    var settings = ScannerSettings()
-
     private var isRunningInForeground = false
 
     private val ruuviRangeNotifier: IRuuviTagScanner by lazy {
@@ -25,6 +26,7 @@ class BluetoothInteractor(
             isRunningInForeground = true
 
             startForegroundScanning()
+            stopForegroundService()
         }
 
         override fun onBecameBackground() {
@@ -34,10 +36,26 @@ class BluetoothInteractor(
 
             if (settings.allowBackgroundScan()) {
                 startBackgroundScanning()
+                startForegroundService()
             } else {
                 Timber.d("background scanning disabled")
             }
         }
+    }
+
+    fun startForegroundService() {
+        val serviceIntent = Intent(application, BluetoothForegroundService::class.java)
+        serviceIntent.putExtra("inputExtra", "Foreground Service Example in Android")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            application.startForegroundService(serviceIntent)
+        } else {
+            application.startService(serviceIntent)
+        }
+    }
+
+    fun stopForegroundService() {
+        val serviceIntent = Intent(application, BluetoothForegroundService::class.java)
+        application.stopService(serviceIntent)
     }
 
     init {

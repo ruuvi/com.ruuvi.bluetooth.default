@@ -16,10 +16,8 @@ class RuuviRangeNotifier(
 ) : IRuuviTagScanner {
     private var tagListener: IRuuviTagScanner.OnTagFoundListener? = null
 
-    private val bluetoothAdapter: BluetoothAdapter by lazy(LazyThreadSafetyMode.NONE) {
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothManager.adapter
-    }
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    private var scanner: BluetoothLeScanner? = null
 
     private val scanSettings: ScanSettings by lazy {
         ScanSettings.Builder()
@@ -28,11 +26,19 @@ class RuuviRangeNotifier(
                 .build()
     }
 
-    private val scanner: BluetoothLeScanner by lazy { bluetoothAdapter.bluetoothLeScanner }
     private var isScanning = false
+    private val crashResolver = BluetoothCrashResolver(context)
 
     init {
         Timber.d("[$from] Setting up range notifier")
+        initScanner()
+    }
+
+    private fun initScanner() {
+        Timber.d("Trying to initialize bluetooth adapter")
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
+        scanner = bluetoothAdapter?.bluetoothLeScanner
     }
 
     @SuppressLint("MissingPermission")
@@ -42,7 +48,8 @@ class RuuviRangeNotifier(
         Timber.d("[$from] startScanning")
         if (!canScan()) {
             Timber.d("Can't scan bluetoothAdapter is null")
-            return
+            initScanner()
+            if (!canScan()) return
         }
         if (isScanning) {
             Timber.d( "Already scanning!")
@@ -50,7 +57,8 @@ class RuuviRangeNotifier(
         }
         this.tagListener = foundListener
         isScanning = true
-        scanner.startScan(getScanFilters(), scanSettings, scanCallback)
+        scanner?.startScan(getScanFilters(), scanSettings, scanCallback)
+        crashResolver.start()
     }
 
     override fun canScan(): Boolean = bluetoothAdapter != null && scanner != null
@@ -59,7 +67,7 @@ class RuuviRangeNotifier(
     override fun stopScanning() {
         if (!canScan()) return
         Timber.d( "[$from] stopScanning isScanning = $isScanning")
-        scanner.stopScan(scanCallback)
+        scanner?.stopScan(scanCallback)
         isScanning = false
     }
 

@@ -1,6 +1,12 @@
 package com.ruuvi.station.bluetooth.util
 
-open class ScannerSettings {
-    open fun allowBackgroundScan() = false
-    open fun getBackgroundScanInterval() = 60 * 1000L
+import android.app.PendingIntent
+
+interface ScannerSettings {
+    fun allowBackgroundScan(): Boolean
+    fun getBackgroundScanInterval(): Long
+    fun getNotificationIconId(): Int
+    fun getNotificationTitle(): String
+    fun getNotificationText(): String
+    fun getNotificationPendingIntent(): PendingIntent?
 }

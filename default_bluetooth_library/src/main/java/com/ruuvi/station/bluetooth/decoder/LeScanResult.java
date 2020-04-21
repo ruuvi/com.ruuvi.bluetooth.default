@@ -1,7 +1,6 @@
 package com.ruuvi.station.bluetooth.decoder;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 import com.neovisionaries.bluetooth.ble.advertising.ADManufacturerSpecific;
 import com.neovisionaries.bluetooth.ble.advertising.ADPayloadParser;
 import com.neovisionaries.bluetooth.ble.advertising.ADStructure;
@@ -9,10 +8,12 @@ import com.neovisionaries.bluetooth.ble.advertising.EddystoneURL;
 import com.ruuvi.station.bluetooth.FoundRuuviTag;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import timber.log.Timber;
 
 
 public class LeScanResult {
     private static final String TAG = "LeScanResult";
+    private static final Integer PROTOCOL_OFFSET = 7;
     public BluetoothDevice device;
     public byte[] scanData;
     public int rssi;
@@ -49,7 +50,7 @@ public class LeScanResult {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Parsing ble data failed");
+            Timber.e(e,"Parsing ble data failed");
         }
 
         return tag;
@@ -62,7 +63,7 @@ public class LeScanResult {
             rawData = parseByteDataFromB64(data);
             decoder = new DecodeFormat2and4();
         } else if (rawData != null) {
-            int protocolVersion = rawData[7];
+            int protocolVersion = rawData[PROTOCOL_OFFSET];
             switch (protocolVersion) {
                 case 3:
                     decoder = new DecodeFormat3();
@@ -70,10 +71,12 @@ public class LeScanResult {
                 case 5:
                     decoder = new DecodeFormat5();
                     break;
+                default:
+                    Timber.d("Unknown tag protocol version: %1$s (PROTOCOL_OFFSET: %2$s)", protocolVersion, PROTOCOL_OFFSET);
             }
         }
         if (decoder != null) {
-            FoundRuuviTag tag = decoder.decode(rawData, 7);
+            FoundRuuviTag tag = decoder.decode(rawData, PROTOCOL_OFFSET);
             if (tag != null) {
                 tag.setId(id);
                 tag.setUrl(url);

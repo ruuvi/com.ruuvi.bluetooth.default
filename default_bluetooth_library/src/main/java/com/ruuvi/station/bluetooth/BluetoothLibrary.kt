@@ -13,7 +13,7 @@ object BluetoothLibrary {
     fun getBluetoothInteractor(
             application: Application,
             onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
-            settings: ScannerSettings = ScannerSettings()): BluetoothInteractor {
+            settings: ScannerSettings): BluetoothInteractor {
         if (!isInitialized) {
             bluetoothInteractor = BluetoothInteractor(application, onTagsFoundListener, settings)
         }

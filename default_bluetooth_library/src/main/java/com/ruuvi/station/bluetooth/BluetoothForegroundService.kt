@@ -3,23 +3,63 @@ package com.ruuvi.station.bluetooth
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.Service
+import android.os.Handler
+import android.support.v4.app.NotificationCompat
+import com.ruuvi.station.bluetooth.util.ScannerSettings
+import org.kodein.di.Kodein
+import org.kodein.di.KodeinAware
+import org.kodein.di.android.kodein
+import org.kodein.di.generic.instance
+import timber.log.Timber
+import java.util.*
+import kotlin.concurrent.schedule
 
-class BluetoothForegroundService: Service() {
+class BluetoothForegroundService: Service(), KodeinAware {
+    override val kodein: Kodein by kodein()
+    private val scannerSettings: ScannerSettings by instance()
+    val bluetoothInteractor: BluetoothInteractor by instance()
+    private val handler = Handler()
+
+    var scanner = object:Runnable {
+        override fun run() {
+            Timber.d("Start scanning in foreground service")
+            bluetoothInteractor.startScan()
+            Timer(false).schedule(4000) {
+                bluetoothInteractor.stopScanningFromBackground()
+            }
+            val interval = scannerSettings.getBackgroundScanInterval()
+            Timber.d("Scheduling scanning with interval = $interval")
+            handler.postDelayed(this, interval)
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Timber.d("Starting foreground service for bluetooth scan")
         createNotificationChannel()
 
-        val notification: Notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(this, CHANNEL_ID)
-                    .build()
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationCompat.Builder(this, CHANNEL_ID)
         } else {
-            Notification.Builder(this)
-                    .build()
+            NotificationCompat.Builder(this)
         }
-        startForeground(ID, notification)
+        with(builder) {
+            setSmallIcon(scannerSettings.getNotificationIconId())
+            setContentTitle(scannerSettings.getNotificationTitle())
+            setContentText(scannerSettings.getNotificationText())
+            scannerSettings.getNotificationPendingIntent()?.let { pendingIntent ->
+                setContentIntent(pendingIntent)
+            }
+        }
+
+        val interval = scannerSettings.getBackgroundScanInterval()
+        Timber.d("Scheduling scanning with interval = $interval")
+        handler.postDelayed(scanner, interval)
+
+        startForeground(ID, builder.build())
         return START_NOT_STICKY
     }
 
@@ -27,21 +67,28 @@ class BluetoothForegroundService: Service() {
         return null
     }
 
+    override fun onDestroy() {
+        Timber.d("Destroy of foreground service for bluetooth scan")
+        handler.removeCallbacks(scanner)
+        super.onDestroy()
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Timber.d("Creating NotificationChannel ID = $CHANNEL_ID; NAME = $CHANNEL_NAME ")
             val serviceChannel = NotificationChannel(
                     CHANNEL_ID,
                     CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    IMPORTANCE_LOW
             )
-            val manager: NotificationManager = getSystemService(NotificationManager::class.java)
+            val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
         }
     }
 
     companion object {
-        const val ID  = 1
-        const val CHANNEL_ID = "RuuviBluetoothForegroundServiceChannel"
-        const val CHANNEL_NAME = "Foreground Service Channel"
+        const val ID  = 1337
+        const val CHANNEL_ID = "foreground_scanner_channel"
+        const val CHANNEL_NAME = "RuuviStation foreground scanner"
     }
 }

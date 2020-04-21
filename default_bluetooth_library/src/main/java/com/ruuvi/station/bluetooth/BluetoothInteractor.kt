@@ -10,23 +10,20 @@ import timber.log.Timber
 class BluetoothInteractor(
         private val application: Application,
         private val onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
-        val settings: ScannerSettings = ScannerSettings()
+        val settings: ScannerSettings
 ) {
     private var isRunningInForeground = false
 
-    private val ruuviRangeNotifier: IRuuviTagScanner by lazy {
+    private var ruuviRangeNotifier: IRuuviTagScanner =
         RuuviRangeNotifier(application, "BluetoothInteractor")
-    }
 
     private val listener: Foreground.Listener = object : Foreground.Listener {
         override fun onBecameForeground() {
-
             Timber.d("ruuvi onBecameForeground start foreground scanning")
 
             isRunningInForeground = true
 
             startForegroundScanning()
-            stopForegroundService()
         }
 
         override fun onBecameBackground() {
@@ -45,7 +42,6 @@ class BluetoothInteractor(
 
     fun startForegroundService() {
         val serviceIntent = Intent(application, BluetoothForegroundService::class.java)
-        serviceIntent.putExtra("inputExtra", "Foreground Service Example in Android")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             application.startForegroundService(serviceIntent)
         } else {
@@ -54,6 +50,7 @@ class BluetoothInteractor(
     }
 
     fun stopForegroundService() {
+        Timber.d("stopForegroundService")
         val serviceIntent = Intent(application, BluetoothForegroundService::class.java)
         application.stopService(serviceIntent)
     }
@@ -66,6 +63,7 @@ class BluetoothInteractor(
     fun startForegroundScanning() {
         Timber.d("startForegroundScanning")
         ScanningPeriodicReceiver.cancel(application)
+        stopForegroundService()
         startScan()
     }
 
@@ -87,6 +85,12 @@ class BluetoothInteractor(
     fun stopScanningFromBackground() {
         Timber.d("stopScanningFromBackground")
         if (!isRunningInForeground) ruuviRangeNotifier.stopScanning()
+    }
+
+    fun restoreBluetoothScan() {
+        Timber.d("restoring interactor")
+        stopScanning()
+        ruuviRangeNotifier = RuuviRangeNotifier(application, "BluetoothInteractor")
     }
 
     fun canScan() = ruuviRangeNotifier.canScan()

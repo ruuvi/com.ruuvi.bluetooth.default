@@ -1,30 +1,24 @@
-package com.ruuvi.station.bluetooth;
+package com.ruuvi.station.bluetooth.decoder;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
-
 import com.neovisionaries.bluetooth.ble.advertising.ADManufacturerSpecific;
 import com.neovisionaries.bluetooth.ble.advertising.ADPayloadParser;
 import com.neovisionaries.bluetooth.ble.advertising.ADStructure;
 import com.neovisionaries.bluetooth.ble.advertising.EddystoneURL;
-
-import org.altbeacon.beacon.Beacon;
-import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor;
-
+import com.ruuvi.station.bluetooth.FoundRuuviTag;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import timber.log.Timber;
 
 
-class LeScanResult {
-
+public class LeScanResult {
     private static final String TAG = "LeScanResult";
-
-    BluetoothDevice device;
-    byte[] scanData;
-
+    private static final Integer PROTOCOL_OFFSET = 7;
+    public BluetoothDevice device;
+    public byte[] scanData;
     public int rssi;
 
-    FoundRuuviTag parse() {
+    public FoundRuuviTag parse() {
         FoundRuuviTag tag = null;
 
         try {
@@ -56,7 +50,7 @@ class LeScanResult {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Parsing ble data failed");
+            Timber.e(e,"Parsing ble data failed");
         }
 
         return tag;
@@ -69,7 +63,7 @@ class LeScanResult {
             rawData = parseByteDataFromB64(data);
             decoder = new DecodeFormat2and4();
         } else if (rawData != null) {
-            int protocolVersion = rawData[7];
+            int protocolVersion = rawData[PROTOCOL_OFFSET];
             switch (protocolVersion) {
                 case 3:
                     decoder = new DecodeFormat3();
@@ -77,64 +71,18 @@ class LeScanResult {
                 case 5:
                     decoder = new DecodeFormat5();
                     break;
+                default:
+                    Timber.d("Unknown tag protocol version: %1$s (PROTOCOL_OFFSET: %2$s)", protocolVersion, PROTOCOL_OFFSET);
             }
         }
         if (decoder != null) {
-            FoundRuuviTag tag = decoder.decode(rawData, 7);
+            FoundRuuviTag tag = decoder.decode(rawData, PROTOCOL_OFFSET);
             if (tag != null) {
                 tag.setId(id);
                 tag.setUrl(url);
                 tag.setRssi(rssi);
             }
             return tag;
-        }
-        return null;
-    }
-
-    static FoundRuuviTag fromAltbeacon(Beacon beacon) {
-        try {
-            byte pData[] = new byte[128];
-            List<Long> data = beacon.getDataFields();
-            for (int i = 0; i < data.size(); i++)
-                pData[i] = (byte) (data.get(i) & 0xFF);
-            RuuviTagDecoder decoder = null;
-            String url = null;
-            int format = beacon.getBeaconTypeCode();
-            if (data.size() > 0) format = pData[0];
-            switch (format) {
-                case 3:
-                    decoder = new DecodeFormat3();
-                    break;
-                case 5:
-                    decoder = new DecodeFormat5();
-                    break;
-                case 0x10:
-                    // format 2 & 4
-                    if (beacon.getServiceUuid() == 0xfeaa) {
-                        if (beacon.getId1() == null) break;
-                        url = UrlBeaconUrlCompressor.uncompress(beacon.getId1().toByteArray());
-                        if (url.contains("https://ruu.vi/#")) {
-                            String urlData = url.split("#")[1];
-                            pData = parseByteDataFromB64(urlData);
-                            decoder = new DecodeFormat2and4();
-                        }
-                    }
-                    break;
-            }
-            if (decoder != null) {
-                try {
-                    FoundRuuviTag tag = decoder.decode(pData, 0);
-                    tag.setId(beacon.getBluetoothAddress());
-                    tag.setRssi(beacon.getRssi());
-                    tag.setUrl(url);
-                    //Log.d(TAG, "logged tag with format: " + tag.dataFormat + " and mac: " + tag.id + " temp: " + tag.temperature);
-                    return tag;
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse tag data", e);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to parse ruuviTag", e);
         }
         return null;
     }

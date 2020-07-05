@@ -8,7 +8,7 @@ import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.Service
 import android.os.Handler
-import android.support.v4.app.NotificationCompat
+import androidx.core.app.NotificationCompat
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
@@ -18,13 +18,13 @@ import timber.log.Timber
 import java.util.*
 import kotlin.concurrent.schedule
 
-class BluetoothForegroundService: Service(), KodeinAware {
+class BluetoothForegroundService : Service(), KodeinAware {
     override val kodein: Kodein by kodein()
     private val scannerSettings: ScannerSettings by instance()
     val bluetoothInteractor: BluetoothInteractor by instance()
     private val handler = Handler()
 
-    var scanner = object:Runnable {
+    var scanner = object : Runnable {
         override fun run() {
             Timber.d("Start scanning in foreground service")
             bluetoothInteractor.startScan()
@@ -50,6 +50,7 @@ class BluetoothForegroundService: Service(), KodeinAware {
             setSmallIcon(scannerSettings.getNotificationIconId())
             setContentTitle(scannerSettings.getNotificationTitle())
             setContentText(scannerSettings.getNotificationText())
+            setNumber(0)
             scannerSettings.getNotificationPendingIntent()?.let { pendingIntent ->
                 setContentIntent(pendingIntent)
             }
@@ -81,13 +82,17 @@ class BluetoothForegroundService: Service(), KodeinAware {
                     CHANNEL_NAME,
                     IMPORTANCE_LOW
             )
+                    .apply {
+                        setShowBadge(false)
+                    }
+
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
         }
     }
 
     companion object {
-        const val ID  = 1337
+        const val ID = 1337
         const val CHANNEL_ID = "foreground_scanner_channel"
         const val CHANNEL_NAME = "RuuviStation foreground scanner"
     }

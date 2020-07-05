@@ -2,7 +2,7 @@ package com.ruuvi.station.bluetooth
 
 import android.content.Context
 import android.content.Intent
-import android.support.v4.app.JobIntentService
+import androidx.core.app.JobIntentService
 import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
 import org.kodein.di.android.kodein

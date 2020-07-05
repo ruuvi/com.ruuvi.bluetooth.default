@@ -1,11 +1,8 @@
 package com.ruuvi.station.bluetooth.decoder;
 
 import com.ruuvi.station.bluetooth.FoundRuuviTag;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Calendar;
-import java.util.concurrent.TimeUnit;
 
 public class DecodeFormat3 implements LeScanResult.RuuviTagDecoder {
     @Override

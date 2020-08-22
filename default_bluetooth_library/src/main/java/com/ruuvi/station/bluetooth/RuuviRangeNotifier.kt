@@ -19,12 +19,11 @@ class RuuviRangeNotifier(
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var scanner: BluetoothLeScanner? = null
 
-    private val scanSettings: ScanSettings by lazy {
-        ScanSettings.Builder()
-                .setReportDelay(0)
+    private val scanSettings: ScanSettings
+        get() = ScanSettings.Builder()
+                .setReportDelay(BluetoothLibrary.scanInterval * 1000)
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build()
-    }
 
     private var isScanning = false
     private val crashResolver = BluetoothCrashResolver(context)
@@ -52,7 +51,7 @@ class RuuviRangeNotifier(
             if (!canScan()) return
         }
         if (isScanning) {
-            Timber.d( "Already scanning!")
+            Timber.d("Already scanning!")
             return
         }
         this.tagListener = foundListener
@@ -66,14 +65,14 @@ class RuuviRangeNotifier(
     @SuppressLint("MissingPermission")
     override fun stopScanning() {
         if (!canScan()) return
-        Timber.d( "[$from] stopScanning isScanning = $isScanning")
+        Timber.d("[$from] stopScanning isScanning = $isScanning")
         scanner?.stopScan(scanCallback)
         isScanning = false
     }
 
-    private var scanCallback = object:ScanCallback(){
+    private var scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
-            Timber.d( "[$from] onScanResult $result")
+            Timber.d("[$from] onScanResult $result")
             super.onScanResult(callbackType, result)
 
             result?.let {
@@ -89,7 +88,7 @@ class RuuviRangeNotifier(
         }
 
         override fun onScanFailed(errorCode: Int) {
-            Timber.d( "[$from] onScanFailed error code = $errorCode")
+            Timber.d("[$from] onScanFailed error code = $errorCode")
             super.onScanFailed(errorCode)
         }
     }

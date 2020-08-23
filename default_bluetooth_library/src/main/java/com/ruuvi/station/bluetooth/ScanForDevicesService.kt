@@ -12,18 +12,24 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 class ScanForDevicesService : JobIntentService(), KodeinAware {
+
     override val kodein: Kodein by kodein()
-    val bluetoothInteractor: BluetoothInteractor by instance()
+    private val bluetoothInteractor: BluetoothInteractor by instance()
 
     override fun onHandleWork(p0: Intent) {
+
         Timber.d("onHandleWork")
+
         bluetoothInteractor.startScan()
-        Timer(false).schedule(4000) {
+
+        // add 100 millis for the scan interval so that it would finish on time
+        Timer(false).schedule(BluetoothLibrary.scanIntervalMilliseconds + 100) {
             bluetoothInteractor.stopScanningFromBackground()
         }
     }
 
     companion object {
+
         private const val JOB_ID = 1000
 
         fun enqueueWork(context: Context) {

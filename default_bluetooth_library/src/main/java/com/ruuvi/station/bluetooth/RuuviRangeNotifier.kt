@@ -9,11 +9,13 @@ import android.os.ParcelUuid
 import com.ruuvi.station.bluetooth.decoder.LeScanResult
 import timber.log.Timber
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 class RuuviRangeNotifier(
         private val context: Context,
         private val from: String
 ) : IRuuviTagScanner {
+
     private var tagListener: IRuuviTagScanner.OnTagFoundListener? = null
 
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -25,7 +27,7 @@ class RuuviRangeNotifier(
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build()
 
-    private var isScanning = false
+    private val isScanning = AtomicBoolean(false)
     private val crashResolver = BluetoothCrashResolver(context)
 
     init {
@@ -50,12 +52,12 @@ class RuuviRangeNotifier(
             initScanner()
             if (!canScan()) return
         }
-        if (isScanning) {
+        if (!isScanning.compareAndSet(false, true)) {
             Timber.d("Already scanning!")
             return
         }
+
         this.tagListener = foundListener
-        isScanning = true
         scanner?.startScan(getScanFilters(), scanSettings, scanCallback)
         crashResolver.start()
     }
@@ -67,7 +69,7 @@ class RuuviRangeNotifier(
         if (!canScan()) return
         Timber.d("[$from] stopScanning isScanning = $isScanning")
         scanner?.stopScan(scanCallback)
-        isScanning = false
+        isScanning.set(false)
     }
 
     private var scanCallback = object : ScanCallback() {
@@ -106,9 +108,5 @@ class RuuviRangeNotifier(
         filters.add(ruuviFilter)
         filters.add(eddystoneFilter)
         return filters
-    }
-
-    companion object {
-        private const val TAG = "RuuviRangeNotifier"
     }
 }

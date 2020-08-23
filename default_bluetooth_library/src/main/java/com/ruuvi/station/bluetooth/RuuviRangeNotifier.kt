@@ -21,7 +21,7 @@ class RuuviRangeNotifier(
 
     private val scanSettings: ScanSettings
         get() = ScanSettings.Builder()
-                .setReportDelay(BluetoothLibrary.scanInterval * 1000)
+                .setReportDelay(BluetoothLibrary.scanIntervalMilliseconds)
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build()
 

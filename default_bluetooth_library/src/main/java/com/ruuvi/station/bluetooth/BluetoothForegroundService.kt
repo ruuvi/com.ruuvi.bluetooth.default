@@ -31,7 +31,7 @@ class BluetoothForegroundService : Service(), KodeinAware {
             Timer(false).schedule(4000) {
                 bluetoothInteractor.stopScanningFromBackground()
             }
-            val interval = scannerSettings.getBackgroundScanInterval()
+            val interval = scannerSettings.getBackgroundScanIntervalMilliseconds()
             Timber.d("Scheduling scanning with interval = $interval")
             handler.postDelayed(this, interval)
         }
@@ -56,7 +56,7 @@ class BluetoothForegroundService : Service(), KodeinAware {
             }
         }
 
-        val interval = scannerSettings.getBackgroundScanInterval()
+        val interval = scannerSettings.getBackgroundScanIntervalMilliseconds()
         Timber.d("Scheduling scanning with interval = $interval")
         handler.postDelayed(scanner, interval)
 

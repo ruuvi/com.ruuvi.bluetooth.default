@@ -5,8 +5,8 @@ import com.ruuvi.station.bluetooth.util.ScannerSettings
 
 object BluetoothLibrary {
     internal lateinit var bluetoothInteractor: BluetoothInteractor
-    internal val scanInterval
-        get() = bluetoothInteractor.settings.getBackgroundScanInterval()
+    internal val scanIntervalMilliseconds
+        get() = bluetoothInteractor.settings.getBackgroundScanIntervalMilliseconds()
     val isInitialized
         get() = this::bluetoothInteractor.isInitialized
 

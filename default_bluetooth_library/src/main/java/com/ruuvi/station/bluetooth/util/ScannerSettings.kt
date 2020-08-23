@@ -4,7 +4,7 @@ import android.app.PendingIntent
 
 interface ScannerSettings {
     fun allowBackgroundScan(): Boolean
-    fun getBackgroundScanInterval(): Long
+    fun getBackgroundScanIntervalMilliseconds(): Long
     fun getNotificationIconId(): Int
     fun getNotificationTitle(): String
     fun getNotificationText(): String

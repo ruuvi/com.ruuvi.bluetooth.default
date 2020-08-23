@@ -69,7 +69,7 @@ class BluetoothInteractor(
 
     fun startBackgroundScanning() {
         Timber.d("startBackgroundScanning")
-        ScanningPeriodicReceiver.start(application, settings.getBackgroundScanInterval())
+        ScanningPeriodicReceiver.start(application, settings.getBackgroundScanIntervalMilliseconds())
     }
 
     fun startScan() {

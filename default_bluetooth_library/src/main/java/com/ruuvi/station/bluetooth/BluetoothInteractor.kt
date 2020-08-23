@@ -15,7 +15,7 @@ class BluetoothInteractor(
     private var isRunningInForeground = false
 
     private var ruuviRangeNotifier: IRuuviTagScanner =
-        RuuviRangeNotifier(application, "BluetoothInteractor")
+            RuuviRangeNotifier(application, "BluetoothInteractor")
 
     private val listener: Foreground.Listener = object : Foreground.Listener {
         override fun onBecameForeground() {
@@ -56,7 +56,12 @@ class BluetoothInteractor(
     }
 
     init {
+
         Foreground.init(application)
+
+        // foreground listener does not trigger the first onforeground, so first just set it to true
+        isRunningInForeground = true
+
         Foreground.get().addListener(listener)
     }
 

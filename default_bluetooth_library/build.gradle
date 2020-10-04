@@ -36,14 +36,15 @@ def kodein_version = "6.5.0"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    implementation 'com.github.ruuvi:com.ruuvi.bluetooth:2cedd919b2'
-
+    //implementation 'com.github.ruuvi:com.ruuvi.bluetooth:2cedd919b2'
+    implementation project(':bluetooth_library')
     implementation 'com.neovisionaries:nv-bluetooth:1.8'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'androidx.core:core:1.2.0'
+    implementation 'net.swiftzer.semver:semver:1.1.1'
 
     implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
     implementation "org.kodein.di:kodein-di-framework-android-support:$kodein_version"

@@ -6,6 +6,7 @@ import android.os.Build
 import com.ruuvi.station.bluetooth.util.Foreground
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import timber.log.Timber
+import java.util.*
 
 class BluetoothInteractor(
         private val application: Application,
@@ -80,6 +81,11 @@ class BluetoothInteractor(
     fun startScan() {
         Timber.d("startScan")
         ruuviRangeNotifier.startScanning(onTagsFoundListener)
+    }
+
+    fun readLogs(id: String, from: Date?, listener: IRuuviGattListener): Boolean {
+        Timber.d("readLogs")
+        return ruuviRangeNotifier.connect(id, from, listener)
     }
 
     fun stopScanning() {

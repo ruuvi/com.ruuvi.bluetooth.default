@@ -36,8 +36,9 @@ def kodein_version = "6.5.0"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    //implementation 'com.github.ruuvi:com.ruuvi.bluetooth:2cedd919b2'
-    implementation project(':bluetooth_library')
+    implementation 'com.github.ruuvi:com.ruuvi.bluetooth:gatt-SNAPSHOT'
+    //implementation project(':bluetooth_library')
+
     implementation 'com.neovisionaries:nv-bluetooth:1.8'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"

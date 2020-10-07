@@ -29,7 +29,7 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
 
     var isReadingLogs = false
 
-    fun setOnRuuviGattUpdate(listener: IRuuviGattListener){
+    fun setOnRuuviGattUpdate(listener: IRuuviGattListener) {
         this.listener = listener
     }
 
@@ -140,7 +140,7 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
         ) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 if (!isReadingLogs) {
-                listener?.connected(true)
+                    listener?.connected(true)
                     log("Connected")
                     mBluetoothGatt.discoverServices()
                 } else {
@@ -177,27 +177,30 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                     firmwareCharacteristics -> {
                         log("Reading FW")
                         firmware = characteristic.getStringValue(0)
-                        val version: SemVer = when {
-                            firmware[0] == 'R' -> {
-                                SemVer.parse(firmware.replaceFirst("Ruuvi FW v", ""))
+                        try {
+                            val version: SemVer = when {
+                                firmware[0] == 'R' -> {
+                                    SemVer.parse(firmware.replaceFirst("Ruuvi FW v", ""))
+                                }
+                                firmware[0] == 'v' -> {
+                                    SemVer.parse(firmware.replaceFirst("v", ""))
+                                }
+                                else -> {
+                                    SemVer.parse(firmware)
+                                }
                             }
-                            firmware[0] == 'v' -> {
-                                SemVer.parse(firmware.replaceFirst("v", ""))
+                            val logVersion: SemVer = SemVer.parse("3.28.12")
+                            if (version.compareTo(logVersion) != -1) {
+                                log("Tag has log firmware, reading..")
+                                listener?.deviceInfo(model, firmware, true)
+                                registerToNordicRxTx()
+                                return
                             }
-                            else -> {
-                                SemVer.parse(firmware)
-                            }
+                        } catch (e: Exception) {
+                            log("Failed to parse FW")
                         }
-                        val logVersion: SemVer = SemVer.parse("3.28.12")
-                        var canRead = false
-                        if (version.compareTo(logVersion) != -1) {
-                            canRead = true
-                            log("Tag has log firmware, reading..")
-                            registerToNordicRxTx()
-                        } else {
-                            mBluetoothGatt.disconnect()
-                        }
-                        listener?.deviceInfo(model, firmware, canRead)
+                        listener?.deviceInfo(model, firmware, false)
+                        mBluetoothGatt.disconnect()
                     }
                 }
             }
@@ -244,17 +247,17 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                     listener?.dataReady(logs)
                     mBluetoothGatt.disconnect()
                 }
-                val type = data.copyOfRange(0,3)
-                val timestamp = data.copyOfRange(3,7)
-                val value = data.copyOfRange(7,11)
-                val time = Date(byteToLong(timestamp)*1000)
+                val type = data.copyOfRange(0, 3)
+                val timestamp = data.copyOfRange(3, 7)
+                val value = data.copyOfRange(7, 11)
+                val time = Date(byteToLong(timestamp) * 1000)
                 var idx = logs.indexOfFirst { x -> x.date.time == time.time }
                 if (idx == -1) {
                     val reading = LogReading()
                     reading.id = device.address
                     reading.date = time
                     logs.add(reading)
-                    idx = logs.size -1
+                    idx = logs.size - 1
                 }
                 if (type.contentEquals("3A3010".hexStringToByteArray())) {
                     val temp = byteToLong(value) / 100.0

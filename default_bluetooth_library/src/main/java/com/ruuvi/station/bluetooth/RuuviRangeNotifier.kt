@@ -116,25 +116,14 @@ class RuuviRangeNotifier(
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             Timber.d("[$from] onScanResult $result")
             super.onScanResult(callbackType, result)
-
             result?.let {
-                
                 val leresult = LeScanResult()
                 leresult.device = it.device
                 leresult.rssi = it.rssi
                 leresult.scanData = it.scanRecord?.bytes
                 val parsed = leresult.parse()
                 if (parsed != null) {
-                    var connectable = false
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        connectable = result.isConnectable
-                    } else {
-                        result.scanRecord?.let {sr ->
-                            // does this work reliably?
-                            val flags: Int = sr.advertiseFlags
-                            connectable = (flags and 1 == 2)
-                        }
-                    }
+                    val connectable = it.scanRecord?.deviceName != null
                     if (connectable) {
                         val idx = bluetoothDevices.indexOfFirst { x -> x.device.address == leresult.device.address }
                         if (idx != -1) {

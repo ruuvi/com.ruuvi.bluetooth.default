@@ -79,29 +79,6 @@ class RuuviRangeNotifier(
         }
     }
 
-    /*
-    fun readDevice(device: BluetoothDevice) {
-        //if (connectable && tagConnections.find { x -> x.device.address == result.device.address } == null) {
-        val gatt = GattConnection(context, device)
-        gatt.setOnRuuviGattUpdate(object : IRuuviGattListener {
-            override fun connected(state: Boolean) {
-                Timber.d(state.toString())
-            }
-
-            override fun deviceInfo(model: String, fw: String, serial: String, canReadLogs: Boolean) {
-            }
-
-            override fun dataReady(data: List<LogReading>) {
-            }
-
-            override fun heartbeat(raw: String) {
-            }
-        })
-        tagConnections.add(gatt)
-    }
-    */
-
-
     @SuppressLint("MissingPermission")
     override fun stopScanning() {
         if (!canScan()) return

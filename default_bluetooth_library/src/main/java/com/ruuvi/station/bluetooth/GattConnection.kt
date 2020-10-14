@@ -177,18 +177,10 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                     firmwareCharacteristics -> {
                         log("Reading FW")
                         firmware = characteristic.getStringValue(0)
+                        val firstNumberIndex = firmware.indexOfFirst { it.isDigit() }
+                        firmware = firmware.subSequence(firstNumberIndex, firmware.length).toString()
                         try {
-                            val version: SemVer = when {
-                                firmware[0] == 'R' -> {
-                                    SemVer.parse(firmware.replaceFirst("Ruuvi FW v", ""))
-                                }
-                                firmware[0] == 'v' -> {
-                                    SemVer.parse(firmware.replaceFirst("v", ""))
-                                }
-                                else -> {
-                                    SemVer.parse(firmware)
-                                }
-                            }
+                            val version = SemVer.parse(firmware)
                             val logVersion: SemVer = SemVer.parse("3.28.12")
                             if (version.compareTo(logVersion) != -1) {
                                 log("Tag has log firmware, reading..")

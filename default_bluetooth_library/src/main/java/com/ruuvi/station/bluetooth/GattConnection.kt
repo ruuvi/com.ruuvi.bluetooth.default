@@ -182,8 +182,9 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                             firmware = firmware.subSequence(firstNumberIndex, firmware.length).toString()
                             val version = SemVer.parse(firmware)
                             val logVersion: SemVer = SemVer.parse("3.28.12")
-
-                            if (version.compareTo(logVersion) != -1) {
+                            // assume that all debug firmware can read logs
+                            val isDebug = version.buildMetadata != null && version.buildMetadata!!.contains("debug")
+                            if (isDebug || version.compareTo(logVersion) != -1) {
                                 log("Tag has log firmware, reading..")
                                 listener?.deviceInfo(model, firmware, true)
                                 registerToNordicRxTx()

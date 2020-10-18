@@ -209,6 +209,17 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
             super.onCharacteristicWrite(gatt, characteristic, status)
         }
 
+        private fun byteToInt(bytes: ByteArray): Int {
+            var result = 0.toUInt()
+            var shift = 0
+            for (byte in bytes.reversed()) {
+                val uByte = byte.toUByte()
+                result = result or (uByte.toUInt() shl shift)
+                shift += 8
+            }
+            return result.toInt()
+        }
+
         private fun byteToLong(bytes: ByteArray): Long {
             var result = 0.toULong()
             var shift = 0
@@ -255,7 +266,7 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                     idx = logs.size - 1
                 }
                 if (type.contentEquals("3A3010".hexStringToByteArray())) {
-                    val temp = byteToLong(value) / 100.0
+                    val temp = byteToInt(value) / 100.0
                     logs[idx].temperature = temp
                 }
                 if (type.contentEquals("3A3110".hexStringToByteArray())) {

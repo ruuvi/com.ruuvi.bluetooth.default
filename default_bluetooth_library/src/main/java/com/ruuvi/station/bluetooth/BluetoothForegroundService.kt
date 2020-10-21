@@ -28,7 +28,7 @@ class BluetoothForegroundService : Service(), KodeinAware {
         override fun run() {
             Timber.d("Start scanning in foreground service")
             bluetoothInteractor.startScan()
-            Timer(false).schedule(4000) {
+            Timer(false).schedule(bluetoothInteractor.getWorkTime()) {
                 bluetoothInteractor.stopScanningFromBackground()
             }
             val interval = scannerSettings.getBackgroundScanIntervalMilliseconds()

@@ -6,8 +6,9 @@ import net.swiftzer.semver.SemVer
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
+import kotlin.concurrent.schedule
 
-class GattConnection(context: Context, device: BluetoothDevice, private val from: Date?) {
+class GattConnection(context: Context, device: BluetoothDevice, var from: Date?) {
     lateinit var mBluetoothGatt: BluetoothGatt
     var listener: IRuuviGattListener? = null
     var logs = mutableListOf<LogReading>()
@@ -27,7 +28,10 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
     var model = ""
     var firmware = ""
 
-    var isReadingLogs = false
+    var shouldReadLogs = true
+    var retryConnectionCounter = 0
+    val MAX_CONNECT_RETRY = 3
+    var isConnected = false
 
     fun setOnRuuviGattUpdate(listener: IRuuviGattListener) {
         this.listener = listener
@@ -104,7 +108,7 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
     }
 
     fun readLog() {
-        isReadingLogs = true
+        shouldReadLogs = false
         val readAll = 0x3A3A11
         val now = System.currentTimeMillis() / 1000
         var then: Long = 0
@@ -138,8 +142,10 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                 status: Int,
                 newState: Int
         ) {
+            //log("BTSTATE: " + newState)
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                if (!isReadingLogs) {
+                isConnected = true
+                if (shouldReadLogs) {
                     listener?.connected(true)
                     log("Connected")
                     mBluetoothGatt.discoverServices()
@@ -147,8 +153,18 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                     gatt.disconnect()
                 }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                listener?.connected(false)
-                log("Disconnected")
+                if (shouldReadLogs && (++retryConnectionCounter) < MAX_CONNECT_RETRY) {
+                    connect(context, device, from)
+                } else {
+                    listener?.connected(false)
+                    gatt.close()
+                    log("Disconnected")
+                }
+                // this is here to prevent the tag from showing up as "not connectable"
+                // as the the tag will be in disconnected state later than the phone reports
+                Timer().schedule(1500) {
+                    isConnected = false
+                }
             }
         }
 
@@ -193,6 +209,7 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
                         } catch (e: Exception) {
                             log("Failed to parse FW")
                         }
+                        shouldReadLogs = false
                         listener?.deviceInfo(model, firmware, false)
                         mBluetoothGatt.disconnect()
                     }
@@ -241,7 +258,7 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
             if (data[0] == 5.toByte()) {
                 // heartbeat
                 listener?.heartbeat(data.toHexString())
-                if (!isReadingLogs) {
+                if (shouldReadLogs) {
                     readLog()
                 }
             } else {
@@ -282,8 +299,15 @@ class GattConnection(context: Context, device: BluetoothDevice, private val from
         }
     }
 
-    init {
+    fun connect(context: Context, device: BluetoothDevice, fromDate: Date?) {
         Timber.d("Connecting to GATT on ${device.address}")
+        shouldReadLogs = true
+        from = fromDate
+        logs.clear()
         mBluetoothGatt = device.connectGatt(context, false, mGattCallback)
+    }
+
+    init {
+        connect(context, device, from)
     }
 }

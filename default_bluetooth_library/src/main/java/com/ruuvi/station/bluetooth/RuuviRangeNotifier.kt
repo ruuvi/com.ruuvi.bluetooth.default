@@ -68,12 +68,25 @@ class RuuviRangeNotifier(
 
     override fun canScan(): Boolean = bluetoothAdapter != null && scanner != null
 
+    fun getTagConnection(macAddress: String): GattConnection? {
+        return tagConnections.findLast { it.mBluetoothGatt.device.address.toString() == macAddress }
+    }
+
     override fun connect(macAddress: String, readLogsFrom: Date?, listener: IRuuviGattListener): Boolean {
         bluetoothDevices.find { x -> x.device.address == macAddress }.let {
             it?.let { leResult ->
-                val gatt = GattConnection(context, leResult.device, readLogsFrom)
-                gatt.setOnRuuviGattUpdate(listener)
-                tagConnections.add(gatt)
+                val gattConnection = getTagConnection(macAddress)
+                if (gattConnection == null) {
+                    val gatt = GattConnection(context, leResult.device, readLogsFrom)
+                    gatt.setOnRuuviGattUpdate(listener)
+                    tagConnections.add(gatt)
+                } else {
+                    gattConnection.let { gatt ->
+                        gatt.mBluetoothGatt.close()
+                        gatt.setOnRuuviGattUpdate(listener)
+                        gatt.connect(context, leResult.device, readLogsFrom)
+                    }
+                }
             }
             return it != null
         }
@@ -100,7 +113,7 @@ class RuuviRangeNotifier(
                 leresult.scanData = it.scanRecord?.bytes
                 val parsed = leresult.parse()
                 if (parsed != null) {
-                    val connectable = it.scanRecord?.deviceName != null
+                    var connectable = it.scanRecord?.deviceName != null
                     if (connectable) {
                         val idx = bluetoothDevices.indexOfFirst { x -> x.device.address == leresult.device.address }
                         if (idx != -1) {
@@ -108,6 +121,8 @@ class RuuviRangeNotifier(
                         } else {
                             bluetoothDevices.add(leresult)
                         }
+                    } else if (getTagConnection(it.device.address)?.isConnected == true) {
+                        connectable = true
                     }
                     parsed.connectable = connectable
                     tagListener?.onTagFound(parsed)

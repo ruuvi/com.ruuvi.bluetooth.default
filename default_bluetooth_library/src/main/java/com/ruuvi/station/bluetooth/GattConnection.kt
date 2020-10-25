@@ -2,6 +2,7 @@ package com.ruuvi.station.bluetooth
 
 import android.bluetooth.*
 import android.content.Context
+import android.os.Build
 import net.swiftzer.semver.SemVer
 import timber.log.Timber
 import java.nio.ByteBuffer
@@ -147,6 +148,9 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                 isConnected = true
                 if (shouldReadLogs) {
                     listener?.connected(true)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        gatt.setPreferredPhy(BluetoothDevice.PHY_LE_2M, BluetoothDevice.PHY_LE_2M, BluetoothDevice.PHY_OPTION_NO_PREFERRED)
+                    };
                     log("Connected")
                     mBluetoothGatt.discoverServices()
                 } else {

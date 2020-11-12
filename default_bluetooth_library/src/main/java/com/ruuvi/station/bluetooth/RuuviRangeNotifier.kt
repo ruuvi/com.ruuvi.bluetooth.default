@@ -62,7 +62,9 @@ class RuuviRangeNotifier(
         crashResolver.start()
     }
 
-    override fun canScan(): Boolean = bluetoothAdapter != null && scanner != null
+    @SuppressLint("MissingPermission")
+    override fun canScan(): Boolean =
+        bluetoothAdapter != null && scanner != null && bluetoothAdapter?.state == BluetoothAdapter.STATE_ON
 
     @SuppressLint("MissingPermission")
     override fun stopScanning() {

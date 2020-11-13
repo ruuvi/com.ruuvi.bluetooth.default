@@ -32,7 +32,6 @@ class RuuviRangeNotifier(
                 .build()
 
     private val isScanning = AtomicBoolean(false)
-    private val crashResolver = BluetoothCrashResolver(context)
 
     init {
         Timber.d("[$from] Setting up range notifier")
@@ -63,10 +62,11 @@ class RuuviRangeNotifier(
 
         this.tagListener = foundListener
         scanner?.startScan(getScanFilters(), scanSettings, scanCallback)
-        crashResolver.start()
     }
 
-    override fun canScan(): Boolean = bluetoothAdapter != null && scanner != null
+    @SuppressLint("MissingPermission")
+    override fun canScan(): Boolean =
+        bluetoothAdapter != null && scanner != null && bluetoothAdapter?.state == BluetoothAdapter.STATE_ON
 
     fun getTagConnection(macAddress: String): GattConnection? {
         return tagConnections.findLast { it.mBluetoothGatt.device.address.toString() == macAddress }

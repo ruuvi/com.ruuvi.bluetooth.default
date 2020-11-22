@@ -1,7 +1,7 @@
 # com.ruuvi.bluetooth.default
 Default implementation of Ruuvi Bluetooth library for Android
 
-# This link is very useful:
+### Ruuvi sensor protocol specification:
 https://github.com/ruuvi/ruuvi-sensor-protocols
 
 # Usage example
@@ -20,7 +20,7 @@ Add the library and its interface to your project by adding following as depende
 ```gradle
 dependencies {
     implementation 'com.github.ruuvi:com.ruuvi.bluetooth:2cedd919b2'
-    implementation 'com.github.ruuvi:com.ruuvi.bluetooth.default:48cf870335'
+    implementation 'com.github.ruuvi:com.ruuvi.bluetooth.default:31e717b'
     ...
 }
 ```

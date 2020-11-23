@@ -22,8 +22,7 @@ class ScanForDevicesService : JobIntentService(), KodeinAware {
 
         bluetoothInteractor.startScan()
 
-        // add 100 millis for the scan interval so that it would finish on time
-        Timer(false).schedule(BluetoothLibrary.scanIntervalMilliseconds + 100) {
+        Timer(false).schedule(bluetoothInteractor.getWorkTime()) {
             bluetoothInteractor.stopScanningFromBackground()
         }
     }

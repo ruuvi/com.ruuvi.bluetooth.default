@@ -99,4 +99,8 @@ class BluetoothInteractor(
     }
 
     fun canScan() = ruuviRangeNotifier.canScan()
+
+    // This should return for how long background scan should be activated (depends on BackgroundScanInterval) (ms)
+    // For interval of 60min - work time will be 1m4s
+    fun getWorkTime(): Long = 4000 + settings.getBackgroundScanIntervalMilliseconds() / 60
 }

@@ -45,6 +45,7 @@ dependencies {
 
     implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'androidx.core:core:1.2.0'
+    implementation 'net.swiftzer.semver:semver:1.1.1'
 
     implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
     implementation "org.kodein.di:kodein-di-framework-android-support:$kodein_version"

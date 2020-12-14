@@ -6,6 +6,7 @@ import android.os.Build
 import com.ruuvi.station.bluetooth.util.Foreground
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import timber.log.Timber
+import java.util.*
 
 class BluetoothInteractor(
         private val application: Application,
@@ -82,6 +83,11 @@ class BluetoothInteractor(
         ruuviRangeNotifier.startScanning(onTagsFoundListener)
     }
 
+    fun readLogs(id: String, from: Date?, listener: IRuuviGattListener): Boolean {
+        Timber.d("readLogs")
+        return ruuviRangeNotifier.connect(id, from, listener)
+    }
+
     fun stopScanning() {
         Timber.d("stopScanning")
         ruuviRangeNotifier.stopScanning()
@@ -99,4 +105,8 @@ class BluetoothInteractor(
     }
 
     fun canScan() = ruuviRangeNotifier.canScan()
+
+    // This should return for how long background scan should be activated (depends on BackgroundScanInterval) (ms)
+    // For interval of 60min - work time will be 1m4s
+    fun getWorkTime(): Long = 4000 + settings.getBackgroundScanIntervalMilliseconds() / 60
 }

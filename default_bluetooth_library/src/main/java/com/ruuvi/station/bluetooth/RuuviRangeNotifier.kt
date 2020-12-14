@@ -2,9 +2,11 @@ package com.ruuvi.station.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
 import android.content.Context
+import android.os.Build
 import android.os.ParcelUuid
 import com.ruuvi.station.bluetooth.decoder.LeScanResult
 import timber.log.Timber
@@ -20,6 +22,8 @@ class RuuviRangeNotifier(
 
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var scanner: BluetoothLeScanner? = null
+    private var tagConnections = mutableListOf<GattConnection>()
+    private var bluetoothDevices = mutableListOf<LeScanResult>()
 
     private val scanSettings: ScanSettings
         get() = ScanSettings.Builder()
@@ -28,7 +32,6 @@ class RuuviRangeNotifier(
                 .build()
 
     private val isScanning = AtomicBoolean(false)
-    private val crashResolver = BluetoothCrashResolver(context)
 
     init {
         Timber.d("[$from] Setting up range notifier")
@@ -59,10 +62,35 @@ class RuuviRangeNotifier(
 
         this.tagListener = foundListener
         scanner?.startScan(getScanFilters(), scanSettings, scanCallback)
-        crashResolver.start()
     }
 
-    override fun canScan(): Boolean = bluetoothAdapter != null && scanner != null
+    @SuppressLint("MissingPermission")
+    override fun canScan(): Boolean =
+        bluetoothAdapter != null && scanner != null && bluetoothAdapter?.state == BluetoothAdapter.STATE_ON
+
+    fun getTagConnection(macAddress: String): GattConnection? {
+        return tagConnections.findLast { it.mBluetoothGatt.device.address.toString() == macAddress }
+    }
+
+    override fun connect(macAddress: String, readLogsFrom: Date?, listener: IRuuviGattListener): Boolean {
+        bluetoothDevices.find { x -> x.device.address == macAddress }.let {
+            it?.let { leResult ->
+                val gattConnection = getTagConnection(macAddress)
+                if (gattConnection == null) {
+                    val gatt = GattConnection(context, leResult.device, readLogsFrom)
+                    gatt.setOnRuuviGattUpdate(listener)
+                    tagConnections.add(gatt)
+                } else {
+                    gattConnection.let { gatt ->
+                        gatt.mBluetoothGatt.close()
+                        gatt.setOnRuuviGattUpdate(listener)
+                        gatt.connect(context, leResult.device, readLogsFrom)
+                    }
+                }
+            }
+            return it != null
+        }
+    }
 
     @SuppressLint("MissingPermission")
     override fun stopScanning() {
@@ -72,11 +100,12 @@ class RuuviRangeNotifier(
         isScanning.set(false)
     }
 
+    var test = false
+
     private var scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             Timber.d("[$from] onScanResult $result")
             super.onScanResult(callbackType, result)
-
             result?.let {
                 val leresult = LeScanResult()
                 leresult.device = it.device
@@ -84,6 +113,18 @@ class RuuviRangeNotifier(
                 leresult.scanData = it.scanRecord?.bytes
                 val parsed = leresult.parse()
                 if (parsed != null) {
+                    var connectable = it.scanRecord?.deviceName != null
+                    if (connectable) {
+                        val idx = bluetoothDevices.indexOfFirst { x -> x.device.address == leresult.device.address }
+                        if (idx != -1) {
+                            bluetoothDevices[idx] = leresult
+                        } else {
+                            bluetoothDevices.add(leresult)
+                        }
+                    } else if (getTagConnection(it.device.address)?.isConnected == true) {
+                        connectable = true
+                    }
+                    parsed.connectable = connectable
                     tagListener?.onTagFound(parsed)
                 }
             }

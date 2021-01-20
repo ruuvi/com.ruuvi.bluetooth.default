@@ -19,7 +19,6 @@ class DecodeFormat2and4 implements LeScanResult.RuuviTagDecoder {
         double tempSign = (pData[2] >> 7) & 1;
         tag.setTemperature(tempSign == 0.00 ? uTemp / 256.0 : -1.00 * uTemp / 256.0);
         tag.setPressure(((pData[4] << 8) + pData[5]) + 50000.0);
-        tag.setPressure(tag.getPressure() != null ? tag.getPressure() / 100.00 : 0.0);
 
         tag.setTemperature(round(tag.getTemperature() != null ? tag.getTemperature() : 0.0));
         tag.setHumidity(round(tag.getHumidity() != null ? tag.getHumidity() : 0.0));

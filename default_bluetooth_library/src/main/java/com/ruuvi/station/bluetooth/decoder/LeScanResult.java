@@ -56,7 +56,7 @@ public class LeScanResult {
         return tag;
     }
 
-    private static FoundRuuviTag from(String id, String url, byte[] rawData, int rssi) {
+    public static FoundRuuviTag from(String id, String url, byte[] rawData, int rssi) {
         RuuviTagDecoder decoder = null;
         if (url != null && url.contains("#")) {
             String data = url.split("#")[1];

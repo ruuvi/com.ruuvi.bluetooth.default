@@ -13,6 +13,7 @@ class DecodeFormat2and4 implements LeScanResult.RuuviTagDecoder {
             pData[i] = data[i] & 0xFF;
 
         FoundRuuviTag tag = new FoundRuuviTag();
+        tag.setRawData(data);
         tag.setDataFormat(pData[0]);
         tag.setHumidity(((pData[1] & 0xFF)) / 2.0);
         double uTemp = (((pData[2] & 127) << 8) | pData[3]);

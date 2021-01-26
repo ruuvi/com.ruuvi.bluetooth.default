@@ -10,6 +10,7 @@ public class DecodeFormat5 implements LeScanResult.RuuviTagDecoder {
     @Override
     public FoundRuuviTag decode(byte[] data, int offset) {
         FoundRuuviTag tag = new FoundRuuviTag();
+        tag.setRawData(data);
         tag.setDataFormat(5);
         tag.setTemperature((data[1 + offset] << 8 | data[2 + offset] & 0xFF) / 200d);
         tag.setHumidity(((data[3 + offset] & 0xFF) << 8 | data[4 + offset] & 0xFF) / 400d);

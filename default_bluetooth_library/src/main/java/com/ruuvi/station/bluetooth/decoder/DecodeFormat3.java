@@ -8,6 +8,7 @@ public class DecodeFormat3 implements LeScanResult.RuuviTagDecoder {
     @Override
     public FoundRuuviTag decode(byte[] data, int offset) {
         FoundRuuviTag tag = new FoundRuuviTag();
+        tag.setRawData(data);
         tag.setDataFormat(3);
         tag.setHumidity(((float) (data[1 + offset] & 0xFF)) / 2.0);
 

@@ -32,6 +32,7 @@ class RuuviRangeNotifier(
                 .build()
 
     private val isScanning = AtomicBoolean(false)
+    private val crashResolver = BluetoothCrashResolver(context)
 
     init {
         Timber.d("[$from] Setting up range notifier")
@@ -50,6 +51,8 @@ class RuuviRangeNotifier(
             foundListener: IRuuviTagScanner.OnTagFoundListener
     ) {
         Timber.d("[$from] startScanning")
+        crashResolver.start()
+
         if (!canScan()) {
             Timber.d("Can't scan bluetoothAdapter is null")
             initScanner()

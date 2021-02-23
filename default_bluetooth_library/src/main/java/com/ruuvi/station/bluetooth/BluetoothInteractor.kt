@@ -57,11 +57,7 @@ class BluetoothInteractor(
     }
 
     init {
-
         Foreground.init(application)
-
-        // foreground listener does not trigger the first onforeground, so first just set it to true
-        isRunningInForeground = true
 
         Foreground.get().addListener(listener)
     }
@@ -94,7 +90,7 @@ class BluetoothInteractor(
     }
 
     fun stopScanningFromBackground() {
-        Timber.d("stopScanningFromBackground")
+        Timber.d("stopScanningFromBackground (isRunningInForeground = $isRunningInForeground)")
         if (!isRunningInForeground) ruuviRangeNotifier.stopScanning()
     }
 

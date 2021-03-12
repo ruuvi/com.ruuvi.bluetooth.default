@@ -2,11 +2,9 @@ package com.ruuvi.station.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
 import android.content.Context
-import android.os.Build
 import android.os.ParcelUuid
 import com.ruuvi.station.bluetooth.decoder.LeScanResult
 import timber.log.Timber
@@ -33,6 +31,7 @@ class RuuviRangeNotifier(
 
     private val isScanning = AtomicBoolean(false)
     private val crashResolver = BluetoothCrashResolver(context)
+    private val sequenceMap = HashMap<String, Int>()
 
     init {
         Timber.d("[$from] Setting up range notifier")
@@ -103,8 +102,6 @@ class RuuviRangeNotifier(
         isScanning.set(false)
     }
 
-    var test = false
-
     private var scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             Timber.d("[$from] onScanResult $result")
@@ -128,7 +125,7 @@ class RuuviRangeNotifier(
                         connectable = true
                     }
                     parsed.connectable = connectable
-                    tagListener?.onTagFound(parsed)
+                    sendDataToListener(parsed)
                 }
             }
         }
@@ -136,6 +133,26 @@ class RuuviRangeNotifier(
         override fun onScanFailed(errorCode: Int) {
             Timber.d("[$from] onScanFailed error code = $errorCode")
             super.onScanFailed(errorCode)
+        }
+    }
+
+    private fun sendDataToListener(tag: FoundRuuviTag) {
+        if (tag.measurementSequenceNumber != null) {
+            val lastSequenceNumber = sequenceMap[tag.id]
+
+            if (lastSequenceNumber == null || tag.measurementSequenceNumber != lastSequenceNumber) {
+                tagListener?.onTagFound(tag)
+
+                tag.id?.let {id ->
+                    tag.measurementSequenceNumber?.let { sequenceNumber ->
+                        sequenceMap[id] = sequenceNumber
+                    }
+                }
+            } else {
+                Timber.d("Measurement skipped for ${tag.id} sequenceNumber = ${tag.measurementSequenceNumber}")
+            }
+        } else {
+            tagListener?.onTagFound(tag)
         }
     }
 

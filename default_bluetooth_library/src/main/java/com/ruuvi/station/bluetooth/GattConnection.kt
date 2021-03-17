@@ -311,6 +311,10 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
         mBluetoothGatt = device.connectGatt(context, false, mGattCallback)
     }
 
+    fun disconnect() {
+        mBluetoothGatt.disconnect()
+    }
+
     init {
         connect(context, device, from)
     }

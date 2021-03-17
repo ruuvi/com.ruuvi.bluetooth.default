@@ -94,6 +94,15 @@ class RuuviRangeNotifier(
         }
     }
 
+    override fun disconnect(macAddress: String): Boolean {
+        val connection = getTagConnection(macAddress)
+        if (connection != null) {
+            connection.disconnect()
+            return true
+        }
+        return false
+    }
+
     @SuppressLint("MissingPermission")
     override fun stopScanning() {
         if (!canScan()) return

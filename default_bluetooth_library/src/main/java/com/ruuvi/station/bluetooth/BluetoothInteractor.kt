@@ -84,6 +84,11 @@ class BluetoothInteractor(
         return ruuviRangeNotifier.connect(id, from, listener)
     }
 
+    fun disconnect(id: String): Boolean {
+        Timber.d("gatt disconnect")
+        return ruuviRangeNotifier.disconnect(id)
+    }
+
     fun stopScanning() {
         Timber.d("stopScanning")
         ruuviRangeNotifier.stopScanning()

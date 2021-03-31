@@ -147,7 +147,11 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 isConnected = true
                 if (shouldReadLogs) {
-                    listener?.connected(true)
+                    try {
+                        listener?.connected(true)
+                    } catch (e: Exception) {
+                        log(e.toString())
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         gatt.setPreferredPhy(BluetoothDevice.PHY_LE_2M, BluetoothDevice.PHY_LE_2M, BluetoothDevice.PHY_OPTION_NO_PREFERRED)
                     };
@@ -160,7 +164,11 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                 if (shouldReadLogs && (++retryConnectionCounter) < MAX_CONNECT_RETRY) {
                     connect(context, device, from)
                 } else {
-                    listener?.connected(false)
+                    try {
+                        listener?.connected(false)
+                    } catch (e: Exception) {
+                        log(e.toString())
+                    }
                     gatt.close()
                     log("Disconnected")
                 }
@@ -214,7 +222,11 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                             log("Failed to parse FW")
                         }
                         shouldReadLogs = false
-                        listener?.deviceInfo(model, firmware, false)
+                        try {
+                            listener?.deviceInfo(model, firmware, false)
+                        } catch (e: Exception) {
+                            log(e.toString())
+                        }
                         mBluetoothGatt.disconnect()
                     }
                 }
@@ -261,7 +273,11 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
             val data = characteristic.value
             if (data[0] == 5.toByte()) {
                 // heartbeat
-                listener?.heartbeat(data.toHexString())
+                try {
+                    listener?.heartbeat(data.toHexString())
+                } catch (e: Exception) {
+                    log(e.toString())
+                }
                 if (shouldReadLogs) {
                     readLog()
                 }
@@ -272,7 +288,11 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                     if (oddData.isNotEmpty()) {
                         logs.removeAll { x -> x.temperature == 0.toDouble() && x.humidity == 0.toDouble() && x.pressure == 0.toDouble() }
                     }
-                    listener?.dataReady(logs)
+                    try {
+                        listener?.dataReady(logs)
+                    } catch (e: Exception) {
+                        log(e.toString())
+                    }
                     mBluetoothGatt.disconnect()
                 }
                 val type = data.copyOfRange(0, 3)
@@ -312,6 +332,7 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
     }
 
     fun disconnect() {
+        shouldReadLogs = false
         mBluetoothGatt.disconnect()
     }
 

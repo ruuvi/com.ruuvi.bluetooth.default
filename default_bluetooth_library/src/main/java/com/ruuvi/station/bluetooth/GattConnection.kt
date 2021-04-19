@@ -33,6 +33,7 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
     var retryConnectionCounter = 0
     val MAX_CONNECT_RETRY = 3
     var isConnected = false
+    var syncedPoints = 0
 
     fun setOnRuuviGattUpdate(listener: IRuuviGattListener) {
         this.listener = listener
@@ -306,6 +307,8 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                     reading.date = time
                     logs.add(reading)
                     idx = logs.size - 1
+                    syncedPoints++
+                    listener?.syncProgress(syncedPoints)
                 }
                 if (type.contentEquals("3A3010".hexStringToByteArray())) {
                     val temp = byteToInt(value) / 100.0
@@ -328,6 +331,7 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
         shouldReadLogs = true
         from = fromDate
         logs.clear()
+        syncedPoints = 0
         mBluetoothGatt = device.connectGatt(context, false, mGattCallback)
     }
 

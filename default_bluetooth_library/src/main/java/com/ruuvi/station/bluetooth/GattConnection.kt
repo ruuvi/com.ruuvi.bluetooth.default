@@ -9,8 +9,9 @@ import java.nio.ByteBuffer
 import java.util.*
 import kotlin.concurrent.schedule
 
-class GattConnection(context: Context, device: BluetoothDevice, var from: Date?) {
+class GattConnection(context: Context, var device: BluetoothDevice) {
     lateinit var mBluetoothGatt: BluetoothGatt
+    var syncFrom: Date? = null
     var listener: IRuuviGattListener? = null
     var logs = mutableListOf<LogReading>()
 
@@ -114,7 +115,7 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
         val readAll = 0x3A3A11
         val now = System.currentTimeMillis() / 1000
         var then: Long = 0
-        from?.let {
+        syncFrom?.let {
             then = it.time / 1000
         }
         log("Reading logs from $then")
@@ -163,7 +164,7 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                 }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 if (shouldReadLogs && (++retryConnectionCounter) < MAX_CONNECT_RETRY) {
-                    connect(context, device, from)
+                    connect(context, syncFrom)
                 } else {
                     try {
                         listener?.connected(false)
@@ -228,7 +229,7 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                         } catch (e: Exception) {
                             log(e.toString())
                         }
-                        mBluetoothGatt.disconnect()
+                        gatt.disconnect()
                     }
                 }
             } else {
@@ -284,6 +285,7 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                 }
             } else {
                 if (data.toHexString().endsWith("ffffffffffffffff")) {
+                    log("DONE with logs")
                     // end of logs
                     val oddData = logs.filter { x -> x.temperature == 0.toDouble() && x.humidity == 0.toDouble() && x.pressure == 0.toDouble() }
                     if (oddData.isNotEmpty()) {
@@ -294,7 +296,8 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
                     } catch (e: Exception) {
                         log(e.toString())
                     }
-                    mBluetoothGatt.disconnect()
+                    log("Calling disconnect")
+                    gatt.disconnect()
                 }
                 val type = data.copyOfRange(0, 3)
                 val timestamp = data.copyOfRange(3, 7)
@@ -326,21 +329,19 @@ class GattConnection(context: Context, device: BluetoothDevice, var from: Date?)
         }
     }
 
-    fun connect(context: Context, device: BluetoothDevice, fromDate: Date?) {
+    fun connect(context: Context, fromDate: Date?): Boolean {
         Timber.d("Connecting to GATT on ${device.address}")
         shouldReadLogs = true
-        from = fromDate
         logs.clear()
+        syncFrom = fromDate
         syncedPoints = 0
-        mBluetoothGatt = device.connectGatt(context, false, mGattCallback)
+        val gattConnection = device.connectGatt(context, false, mGattCallback) ?: return false
+        mBluetoothGatt = gattConnection
+        return true
     }
 
     fun disconnect() {
         shouldReadLogs = false
         mBluetoothGatt.disconnect()
-    }
-
-    init {
-        connect(context, device, from)
     }
 }

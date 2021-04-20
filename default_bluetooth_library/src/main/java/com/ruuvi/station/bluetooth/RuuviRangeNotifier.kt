@@ -79,14 +79,17 @@ class RuuviRangeNotifier(
             it?.let { leResult ->
                 val gattConnection = getTagConnection(macAddress)
                 if (gattConnection == null) {
-                    val gatt = GattConnection(context, leResult.device, readLogsFrom)
+                    val gatt = GattConnection(context, leResult.device)
                     gatt.setOnRuuviGattUpdate(listener)
-                    tagConnections.add(gatt)
+                    val connected = gatt.connect(context, readLogsFrom)
+                    if (connected)
+                        tagConnections.add(gatt)
+                    return connected
                 } else {
                     gattConnection.let { gatt ->
                         gatt.mBluetoothGatt.close()
                         gatt.setOnRuuviGattUpdate(listener)
-                        gatt.connect(context, leResult.device, readLogsFrom)
+                        return gatt.connect(context, readLogsFrom)
                     }
                 }
             }

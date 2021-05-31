@@ -42,7 +42,6 @@ import timber.log.Timber;
  * Created by dyoung on 3/24/14.
  */
 public class BluetoothCrashResolver {
-    private static final String TAG = "BluetoothCrashResolver";
     private static final boolean PREEMPTIVE_ACTION_ENABLED = true;
     /**
      * This is not the same file that Bluedroid uses.  This is just to maintain state of this module.
@@ -51,14 +50,14 @@ public class BluetoothCrashResolver {
     private boolean recoveryInProgress = false;
     private boolean discoveryStartConfirmed = false;
 
-    private long lastBluetoothOffTime = 0l;
-    private long lastBluetoothTurningOnTime = 0l;
-    private long lastBluetoothCrashDetectionTime = 0l;
+    private long lastBluetoothOffTime = 0L;
+    private long lastBluetoothTurningOnTime = 0L;
+    private long lastBluetoothCrashDetectionTime = 0L;
     private int detectedCrashCount = 0;
     private int recoveryAttemptCount = 0;
     private boolean lastRecoverySucceeded = false;
-    private long lastStateSaveTime = 0l;
-    private static final long MIN_TIME_BETWEEN_STATE_SAVES_MILLIS = 60000l;
+    private long lastStateSaveTime = 0L;
+    private static final long MIN_TIME_BETWEEN_STATE_SAVES_MILLIS = 60000L;
 
     private Context context = null;
     private UpdateNotifier updateNotifier;
@@ -77,7 +76,7 @@ public class BluetoothCrashResolver {
      // about 600ms, but it is pretty hard to do.
      //
      */
-    private static final long SUSPICIOUSLY_SHORT_BLUETOOTH_OFF_INTERVAL_MILLIS = 600l;
+    private static final long SUSPICIOUSLY_SHORT_BLUETOOTH_OFF_INTERVAL_MILLIS = 600L;
     /**
      * The Bluedroid stack can only track only 1990 unique Bluetooth mac addresses without crashing
      */
@@ -189,8 +188,7 @@ public class BluetoothCrashResolver {
         }
         if (distinctBluetoothAddresses.size()  > getCrashRiskDeviceCount()) {
             if (PREEMPTIVE_ACTION_ENABLED && !recoveryInProgress) {
-                Timber.w( "Large number of Bluetooth devices detected: %s Proactively "
-                                + "attempting to clear out address list to prevent a crash",
+                Timber.w( "Large number of Bluetooth devices detected: %s Proactively attempting to clear out address list to prevent a crash",
                         distinctBluetoothAddresses.size());
                 Timber.w( "Stopping LE Scan");
                 //BluetoothAdapter.getDefaultAdapter().stopLeScan(scanner);
@@ -210,8 +208,7 @@ public class BluetoothCrashResolver {
             Timber.d( "Distinct Bluetooth devices seen at crash: %s",
                     distinctBluetoothAddresses.size());
         }
-        long nowTimestamp = SystemClock.elapsedRealtime();
-        lastBluetoothCrashDetectionTime = nowTimestamp;
+        lastBluetoothCrashDetectionTime = SystemClock.elapsedRealtime();
         detectedCrashCount++;
 
         if (recoveryInProgress) {
@@ -239,7 +236,7 @@ public class BluetoothCrashResolver {
     public boolean isRecoveryInProgress() { return recoveryInProgress; }
 
     public interface UpdateNotifier {
-        public void dataUpdated();
+        void dataUpdated();
     }
 
     public void setUpdateNotifier(UpdateNotifier updateNotifier) {

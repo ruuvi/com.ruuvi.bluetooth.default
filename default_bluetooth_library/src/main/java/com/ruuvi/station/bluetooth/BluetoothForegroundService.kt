@@ -24,7 +24,7 @@ class BluetoothForegroundService : Service(), KodeinAware {
     val bluetoothInteractor: BluetoothInteractor by instance()
     private val handler = Handler()
 
-    var scanner = object : Runnable {
+    private var scanner = object : Runnable {
         override fun run() {
             Timber.d("Start scanning in foreground service")
             bluetoothInteractor.startScan()

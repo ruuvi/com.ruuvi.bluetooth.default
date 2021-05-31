@@ -12,7 +12,6 @@ import timber.log.Timber;
 
 
 public class LeScanResult {
-    private static final String TAG = "LeScanResult";
     private static final Integer PROTOCOL_OFFSET = 7;
     public BluetoothDevice device;
     public byte[] scanData;
@@ -90,7 +89,7 @@ public class LeScanResult {
     private static byte[] parseByteDataFromB64(String data) {
         try {
             byte[] bData = decode(data);
-            int pData[] = new int[8];
+            int[] pData = new int[8];
             for (int i = 0; i < bData.length; i++)
                 pData[i] = bData[i] & 0xFF;
             return bData;

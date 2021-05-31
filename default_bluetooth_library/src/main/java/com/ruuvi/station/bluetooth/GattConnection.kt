@@ -15,24 +15,12 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
     var listener: IRuuviGattListener? = null
     var logs = mutableListOf<LogReading>()
 
-    private val infoService: UUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb")
-    private val nordicRxTxService: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
-
-    private val manufacturerCharacteristic: UUID = UUID.fromString("00002a29-0000-1000-8000-00805f9b34fb")
-    private val modelCharacteristics: UUID = UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb")
-    private val firmwareCharacteristics: UUID = UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb")
-
-    private val nordicRxCharacteristic: UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
-    private val nordicTxCharacteristic: UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
-    private val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-
     var manufacturer = ""
     var model = ""
     var firmware = ""
 
     var shouldReadLogs = true
     var retryConnectionCounter = 0
-    val MAX_CONNECT_RETRY = 3
     var isConnected = false
     var syncedPoints = 0
 
@@ -56,15 +44,13 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
         return mBluetoothGatt.writeCharacteristic(rxChar)
     }
 
-    private val HEX_CHARS = "0123456789ABCDEF"
-
     fun String.hexStringToByteArray(): ByteArray {
 
         val result = ByteArray(length / 2)
 
         for (i in 0 until length step 2) {
-            val firstIndex = HEX_CHARS.indexOf(this[i]);
-            val secondIndex = HEX_CHARS.indexOf(this[i + 1]);
+            val firstIndex = HEX_CHARS.indexOf(this[i])
+            val secondIndex = HEX_CHARS.indexOf(this[i + 1])
 
             val octet = firstIndex.shl(4).or(secondIndex)
             result.set(i.shr(1), octet.toByte())
@@ -105,7 +91,7 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
 
         // get heartbeats
         mBluetoothGatt.setCharacteristicNotification(char, true)
-        val descriptor: BluetoothGattDescriptor = char.getDescriptor(CCCD);
+        val descriptor: BluetoothGattDescriptor = char.getDescriptor(CCCD)
         descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
         mBluetoothGatt.writeDescriptor(descriptor)
     }
@@ -156,7 +142,7 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         gatt.setPreferredPhy(BluetoothDevice.PHY_LE_2M, BluetoothDevice.PHY_LE_2M, BluetoothDevice.PHY_OPTION_NO_PREFERRED)
-                    };
+                    }
                     log("Connected")
                     mBluetoothGatt.discoverServices()
                 } else {
@@ -343,5 +329,18 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
     fun disconnect() {
         shouldReadLogs = false
         mBluetoothGatt.disconnect()
+    }
+
+    companion object {
+        private const val HEX_CHARS: String = "0123456789ABCDEF"
+        const val MAX_CONNECT_RETRY = 3
+        private val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+        private val infoService: UUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb")
+        private val nordicRxTxService: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
+        private val manufacturerCharacteristic: UUID = UUID.fromString("00002a29-0000-1000-8000-00805f9b34fb")
+        private val modelCharacteristics: UUID = UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb")
+        private val firmwareCharacteristics: UUID = UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb")
+        private val nordicRxCharacteristic: UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
+        private val nordicTxCharacteristic: UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
     }
 }

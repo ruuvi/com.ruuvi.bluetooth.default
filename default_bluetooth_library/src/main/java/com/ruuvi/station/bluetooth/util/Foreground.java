@@ -5,10 +5,9 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import timber.log.Timber;
 
 /** created by steveliles
  * Usage:
@@ -44,25 +43,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class Foreground implements Application.ActivityLifecycleCallbacks {
 
     public static final long CHECK_DELAY = 500;
-    public static final String TAG = Foreground.class.getName();
 
     public interface Listener {
+        void onBecameForeground();
 
-        public void onBecameForeground();
-
-        public void onBecameBackground();
-
-    }
-
-    public interface Binding {
-        public void unbind();
+        void onBecameBackground();
     }
 
     private static Foreground instance;
 
     private boolean foreground = true, paused = false;
-    private Handler handler = new Handler();
-    private List<Listener> listeners = new CopyOnWriteArrayList<Listener>();
+    private final Handler handler = new Handler();
+    private final List<Listener> listeners = new CopyOnWriteArrayList<Listener>();
     private Runnable check;
 
     /**
@@ -71,7 +63,7 @@ public class Foreground implements Application.ActivityLifecycleCallbacks {
      * initialise, but sometimes (e.g. in test harness) the ApplicationContext
      * is != the Application, and the docs make no guarantees.
      *
-     * @param application
+     * @param application context application
      * @return an initialised Foreground instance
      */
     public static Foreground init(Application application){
@@ -137,16 +129,16 @@ public class Foreground implements Application.ActivityLifecycleCallbacks {
             handler.removeCallbacks(check);
 
         if (wasBackground){
-            Log.i(TAG, "went foreground");
+            Timber.d("went foreground");
             for (Listener l : listeners) {
                 try {
                     l.onBecameForeground();
                 } catch (Exception exc) {
-                    Log.e(TAG, "Listener threw exception!", exc);
+                    Timber.e(exc, "Listener threw exception!");
                 }
             }
         } else {
-            Log.i(TAG, "still foreground");
+            Timber.d("still foreground");
         }
     }
 
@@ -157,22 +149,19 @@ public class Foreground implements Application.ActivityLifecycleCallbacks {
         if (check != null)
             handler.removeCallbacks(check);
 
-        handler.postDelayed(check = new Runnable(){
-            @Override
-            public void run() {
-                if (foreground && paused) {
-                    foreground = false;
-                    Log.i(TAG, "went background");
-                    for (Listener l : listeners) {
-                        try {
-                            l.onBecameBackground();
-                        } catch (Exception exc) {
-                            Log.e(TAG, "Listener threw exception!", exc);
-                        }
+        handler.postDelayed(check = () -> {
+            if (foreground && paused) {
+                foreground = false;
+                Timber.d("went background");
+                for (Listener l : listeners) {
+                    try {
+                        l.onBecameBackground();
+                    } catch (Exception exc) {
+                        Timber.e(exc, "Listener threw exception!");
                     }
-                } else {
-                    Log.i(TAG, "still foreground");
                 }
+            } else {
+                Timber.d("still foreground");
             }
         }, CHECK_DELAY);
     }

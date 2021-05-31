@@ -23,8 +23,7 @@ object BluetoothLibrary {
 
     fun decode(id: String, rawData: String, rssi: Int): FoundRuuviTag {
         val data = rawData.hexStringToByteArray()
-        val tag = LeScanResult.from(id, null, data, rssi)
-        return tag
+        return LeScanResult.from(id, null, data, rssi)
     }
 
     private val HEX_CHARS = "0123456789ABCDEF"
@@ -33,11 +32,11 @@ object BluetoothLibrary {
         val result = ByteArray(length / 2)
 
         for (i in 0 until length step 2) {
-            val firstIndex = HEX_CHARS.indexOf(this[i]);
-            val secondIndex = HEX_CHARS.indexOf(this[i + 1]);
+            val firstIndex = HEX_CHARS.indexOf(this[i])
+            val secondIndex = HEX_CHARS.indexOf(this[i + 1])
 
             val octet = firstIndex.shl(4).or(secondIndex)
-            result.set(i.shr(1), octet.toByte())
+            result[i.shr(1)] = octet.toByte()
         }
 
         return result

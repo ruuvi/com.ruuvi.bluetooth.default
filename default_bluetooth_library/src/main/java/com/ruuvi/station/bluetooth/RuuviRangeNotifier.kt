@@ -168,7 +168,7 @@ class RuuviRangeNotifier(
         }
     }
 
-    private fun getScanFilters(): List<ScanFilter>? {
+    private fun getScanFilters(): List<ScanFilter> {
         val filters: MutableList<ScanFilter> = ArrayList()
         val ruuviFilter = ScanFilter
                 .Builder()

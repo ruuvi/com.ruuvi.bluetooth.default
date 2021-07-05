@@ -10,7 +10,7 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 class GattConnection(context: Context, var device: BluetoothDevice) {
-    lateinit var mBluetoothGatt: BluetoothGatt
+    private lateinit var mBluetoothGatt: BluetoothGatt
     var syncFrom: Date? = null
     var listener: IRuuviGattListener? = null
     var logs = mutableListOf<LogReading>()
@@ -30,6 +30,11 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
 
     fun log(message: String) {
         Timber.d("${mBluetoothGatt.device.address} GATT: $message")
+    }
+
+    fun resetState() {
+        retryConnectionCounter = 0
+        mBluetoothGatt.close()
     }
 
     private fun writeRXCharacteristic(value: ByteArray): Boolean {

@@ -71,7 +71,7 @@ class RuuviRangeNotifier(
         bluetoothAdapter != null && scanner != null && bluetoothAdapter?.state == BluetoothAdapter.STATE_ON
 
     fun getTagConnection(macAddress: String): GattConnection? {
-        return tagConnections.findLast { it.mBluetoothGatt.device.address.toString() == macAddress }
+        return tagConnections.findLast { it.device.address.toString() == macAddress }
     }
 
     override fun connect(macAddress: String, readLogsFrom: Date?, listener: IRuuviGattListener): Boolean {
@@ -87,7 +87,7 @@ class RuuviRangeNotifier(
                     return connected
                 } else {
                     gattConnection.let { gatt ->
-                        gatt.mBluetoothGatt.close()
+                        gatt.resetState()
                         gatt.setOnRuuviGattUpdate(listener)
                         return gatt.connect(context, readLogsFrom)
                     }

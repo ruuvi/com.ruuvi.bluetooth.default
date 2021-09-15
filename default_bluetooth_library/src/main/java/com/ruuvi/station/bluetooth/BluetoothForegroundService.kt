@@ -49,10 +49,9 @@ class BluetoothForegroundService : Service(), KodeinAware {
         with(builder) {
             setSmallIcon(scannerSettings.getNotificationIconId())
             setContentTitle(scannerSettings.getNotificationTitle())
-            setContentText(scannerSettings.getNotificationText())
-            setShowWhen(false)
-            setStyle(NotificationCompat.BigTextStyle())
+            setStyle(NotificationCompat.BigTextStyle().bigText(scannerSettings.getNotificationText()))
             setNumber(0)
+            setShowWhen(false)
             scannerSettings.getNotificationPendingIntent()?.let { pendingIntent ->
                 setContentIntent(pendingIntent)
             }

@@ -97,6 +97,29 @@ class RuuviRangeNotifier(
         }
     }
 
+    override fun getFwVersion(macAddress: String, listener: IRuuviGattListener): Boolean {
+        bluetoothDevices.find { x -> x.device.address == macAddress }.let {
+            it?.let { leResult ->
+                val gattConnection = getTagConnection(macAddress)
+                if (gattConnection == null) {
+                    val gatt = GattConnection(context, leResult.device)
+                    gatt.setOnRuuviGattUpdate(listener)
+                    val connected = gatt.getFwVersion(context)
+                    if (connected)
+                        tagConnections.add(gatt)
+                    return connected
+                } else {
+                    gattConnection.let { gatt ->
+                        gatt.resetState()
+                        gatt.setOnRuuviGattUpdate(listener)
+                        return gatt.getFwVersion(context)
+                    }
+                }
+            }
+            return it != null
+        }
+    }
+
     override fun disconnect(macAddress: String): Boolean {
         val connection = getTagConnection(macAddress)
         if (connection != null) {

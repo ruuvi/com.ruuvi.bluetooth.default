@@ -1,1 +1,3 @@
+include ':bluetooth_library'
+project (':bluetooth_library').projectDir=new File('../com.ruuvi.bluetooth/bluetooth_library')
 include ':default_bluetooth_library'

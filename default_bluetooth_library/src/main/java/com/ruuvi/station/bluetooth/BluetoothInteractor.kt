@@ -84,6 +84,11 @@ class BluetoothInteractor(
         return ruuviRangeNotifier.connect(id, from, listener)
     }
 
+    fun getFwVersion(macAddress: String, listener: IRuuviGattListener): Boolean {
+        Timber.d("getFwVersion $macAddress")
+        return ruuviRangeNotifier.getFwVersion(macAddress, listener)
+    }
+
     fun disconnect(id: String): Boolean {
         Timber.d("gatt disconnect")
         return ruuviRangeNotifier.disconnect(id)

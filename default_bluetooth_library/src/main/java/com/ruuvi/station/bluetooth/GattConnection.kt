@@ -3,7 +3,7 @@ package com.ruuvi.station.bluetooth
 import android.bluetooth.*
 import android.content.Context
 import android.os.Build
-import com.ruuvi.station.bluetooth.BluetoothLibrary.hexStringToByteArray
+import com.ruuvi.station.bluetooth.util.extensions.hexStringToByteArray
 import com.ruuvi.station.bluetooth.util.extensions.toHexString
 import com.ruuvi.station.bluetooth.util.extensions.toInt
 import com.ruuvi.station.bluetooth.util.extensions.toLong
@@ -108,6 +108,33 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
         if (!writeRXCharacteristic(msg)) {
             bluetoothGatt.disconnect()
         }
+    }
+
+    fun connect(context: Context, fromDate: Date?): Boolean {
+        Timber.d("Connecting to GATT on ${device.address}")
+        shouldReadLogs = true
+        shouldFinish = false
+        logs.clear()
+        syncFrom = fromDate
+        syncedPoints = 0
+        val gattConnection = device.connectGatt(context, false, gattCallback) ?: return false
+        bluetoothGatt = gattConnection
+        return true
+    }
+
+    fun getFwVersion(context: Context): Boolean {
+        shouldReadLogs = false
+        shouldGetFw = true
+        shouldFinish = false
+        logs.clear()
+        val gattConnection = device.connectGatt(context, false, gattCallback) ?: return false
+        bluetoothGatt = gattConnection
+        return true
+    }
+
+    fun disconnect() {
+        shouldFinish = true
+        bluetoothGatt.disconnect()
     }
 
     private val gattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
@@ -276,33 +303,6 @@ class GattConnection(context: Context, var device: BluetoothDevice) {
                 }
             }
         }
-    }
-
-    fun connect(context: Context, fromDate: Date?): Boolean {
-        Timber.d("Connecting to GATT on ${device.address}")
-        shouldReadLogs = true
-        shouldFinish = false
-        logs.clear()
-        syncFrom = fromDate
-        syncedPoints = 0
-        val gattConnection = device.connectGatt(context, false, gattCallback) ?: return false
-        bluetoothGatt = gattConnection
-        return true
-    }
-
-    fun getFwVersion(context: Context): Boolean {
-        shouldReadLogs = false
-        shouldGetFw = true
-        shouldFinish = false
-        logs.clear()
-        val gattConnection = device.connectGatt(context, false, gattCallback) ?: return false
-        bluetoothGatt = gattConnection
-        return true
-    }
-
-    fun disconnect() {
-        shouldFinish = true
-        bluetoothGatt.disconnect()
     }
 
     companion object {

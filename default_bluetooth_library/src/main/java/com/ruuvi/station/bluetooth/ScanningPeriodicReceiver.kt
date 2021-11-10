@@ -13,7 +13,7 @@ class ScanningPeriodicReceiver: BroadcastReceiver(){
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.d("ScanningPeriodicReceiver.onReceive!")
         if (BluetoothLibrary.isInitialized) {
-            var scanInterval = BluetoothLibrary.scanIntervalMilliseconds
+            val scanInterval = BluetoothLibrary.scanIntervalMilliseconds
             ScanForDevicesService.enqueueWork(context)
             scheduleNext(context, scanInterval)
         }
@@ -61,5 +61,4 @@ class ScanningPeriodicReceiver: BroadcastReceiver(){
             return PendingIntent.getBroadcast(context, 0, intent, 0)
         }
     }
-
 }

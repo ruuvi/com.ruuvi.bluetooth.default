@@ -2,7 +2,6 @@ package com.ruuvi.station.bluetooth
 
 import android.app.Application
 import android.content.Intent
-import android.os.Build
 import com.ruuvi.station.bluetooth.util.Foreground
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import timber.log.Timber
@@ -16,7 +15,7 @@ class BluetoothInteractor(
     private var isRunningInForeground = false
 
     private var ruuviRangeNotifier: IRuuviTagScanner =
-            RuuviRangeNotifier(application, "BluetoothInteractor")
+        RuuviTagScanner(application, "BluetoothInteractor")
 
     private val listener: Foreground.Listener = object : Foreground.Listener {
         override fun onBecameForeground() {
@@ -42,12 +41,7 @@ class BluetoothInteractor(
     }
 
     fun startForegroundService() {
-        val serviceIntent = Intent(application, BluetoothForegroundService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            application.startForegroundService(serviceIntent)
-        } else {
-            application.startService(serviceIntent)
-        }
+        BluetoothForegroundService.start(application)
     }
 
     fun stopForegroundService() {
@@ -84,6 +78,11 @@ class BluetoothInteractor(
         return ruuviRangeNotifier.connect(id, from, listener)
     }
 
+    fun getFwVersion(macAddress: String, listener: IRuuviGattListener): Boolean {
+        Timber.d("getFwVersion $macAddress")
+        return ruuviRangeNotifier.getFwVersion(macAddress, listener)
+    }
+
     fun disconnect(id: String): Boolean {
         Timber.d("gatt disconnect")
         return ruuviRangeNotifier.disconnect(id)
@@ -102,7 +101,7 @@ class BluetoothInteractor(
     fun restoreBluetoothScan() {
         Timber.d("restoring interactor")
         stopScanning()
-        ruuviRangeNotifier = RuuviRangeNotifier(application, "BluetoothInteractor")
+        ruuviRangeNotifier = RuuviTagScanner(application, "BluetoothInteractor")
     }
 
     fun canScan() = ruuviRangeNotifier.canScan()

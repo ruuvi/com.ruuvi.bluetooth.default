@@ -7,11 +7,14 @@ import android.bluetooth.le.*
 import android.content.Context
 import android.os.ParcelUuid
 import com.ruuvi.station.bluetooth.decoder.LeScanResult
+import com.ruuvi.station.bluetooth.gatt.NordicGattManager
 import timber.log.Timber
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-class RuuviRangeNotifier(
+class RuuviTagScanner(
         private val context: Context,
         private val from: String
 ) : IRuuviTagScanner {
@@ -20,8 +23,8 @@ class RuuviRangeNotifier(
 
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var scanner: BluetoothLeScanner? = null
-    private var tagConnections = mutableListOf<GattConnection>()
-    private var bluetoothDevices = mutableListOf<LeScanResult>()
+    private val devices: ConcurrentMap<String, LeScanResult> = ConcurrentHashMap()
+    private val gattManagers: ConcurrentMap<String, NordicGattManager> = ConcurrentHashMap()
 
     private val scanSettings: ScanSettings
         get() = ScanSettings.Builder()
@@ -70,34 +73,42 @@ class RuuviRangeNotifier(
     override fun canScan(): Boolean =
         bluetoothAdapter != null && scanner != null && bluetoothAdapter?.state == BluetoothAdapter.STATE_ON
 
-    fun getTagConnection(macAddress: String): GattConnection? {
-        return tagConnections.findLast { it.mBluetoothGatt.device.address.toString() == macAddress }
+    override fun connect(macAddress: String, readLogsFrom: Date?, listener: IRuuviGattListener): Boolean {
+        val device = devices[macAddress]
+        device.let {
+            it?.let { leResult ->
+                var gattManager = gattManagers[macAddress]
+                if (gattManager == null) {
+                    gattManager = NordicGattManager(context, leResult.device)
+                    gattManagers[macAddress] = gattManager
+                }
+                gattManager.setCallBack(listener)
+                gattManager.getLogs(readLogsFrom)
+            }
+        }
+        return device != null
     }
 
-    override fun connect(macAddress: String, readLogsFrom: Date?, listener: IRuuviGattListener): Boolean {
-        bluetoothDevices.find { x -> x.device.address == macAddress }.let {
+    override fun getFwVersion(macAddress: String, listener: IRuuviGattListener): Boolean {
+        val device = devices[macAddress]
+        device.let {
             it?.let { leResult ->
-                val gattConnection = getTagConnection(macAddress)
-                if (gattConnection == null) {
-                    val gatt = GattConnection(context, leResult.device, readLogsFrom)
-                    gatt.setOnRuuviGattUpdate(listener)
-                    tagConnections.add(gatt)
-                } else {
-                    gattConnection.let { gatt ->
-                        gatt.mBluetoothGatt.close()
-                        gatt.setOnRuuviGattUpdate(listener)
-                        gatt.connect(context, leResult.device, readLogsFrom)
-                    }
+                var gattManager = gattManagers[macAddress]
+                if (gattManager == null) {
+                    gattManager = NordicGattManager(context, leResult.device)
+                    gattManagers[macAddress] = gattManager
                 }
+                gattManager.setCallBack(listener)
+                gattManager.getVersion()
             }
-            return it != null
         }
+        return device != null
     }
 
     override fun disconnect(macAddress: String): Boolean {
-        val connection = getTagConnection(macAddress)
-        if (connection != null) {
-            connection.disconnect()
+        Timber.d("disconnect $macAddress")
+        gattManagers[macAddress]?.let { manager ->
+            manager.executeDisconnect()
             return true
         }
         return false
@@ -124,13 +135,8 @@ class RuuviRangeNotifier(
                 if (parsed != null) {
                     var connectable = it.scanRecord?.deviceName != null
                     if (connectable) {
-                        val idx = bluetoothDevices.indexOfFirst { x -> x.device.address == leresult.device.address }
-                        if (idx != -1) {
-                            bluetoothDevices[idx] = leresult
-                        } else {
-                            bluetoothDevices.add(leresult)
-                        }
-                    } else if (getTagConnection(it.device.address)?.isConnected == true) {
+                        devices[leresult.device.address] = leresult
+                    } else if (gattManagers[it.device.address]?.isConnected == true) {
                         connectable = true
                     }
                     parsed.connectable = connectable
@@ -165,7 +171,7 @@ class RuuviRangeNotifier(
         }
     }
 
-    private fun getScanFilters(): List<ScanFilter>? {
+    private fun getScanFilters(): List<ScanFilter> {
         val filters: MutableList<ScanFilter> = ArrayList()
         val ruuviFilter = ScanFilter
                 .Builder()

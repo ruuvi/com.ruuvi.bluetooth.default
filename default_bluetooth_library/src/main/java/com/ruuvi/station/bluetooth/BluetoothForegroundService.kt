@@ -7,6 +7,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.Service
+import android.content.Context
 import android.os.Handler
 import androidx.core.app.NotificationCompat
 import com.ruuvi.station.bluetooth.util.ScannerSettings
@@ -96,5 +97,14 @@ class BluetoothForegroundService : Service(), KodeinAware {
         const val ID = 1337
         const val CHANNEL_ID = "foreground_scanner_channel"
         const val CHANNEL_NAME = "RuuviStation foreground scanner"
+
+        fun start(context: Context) {
+            val serviceIntent = Intent(context, BluetoothForegroundService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        }
     }
 }

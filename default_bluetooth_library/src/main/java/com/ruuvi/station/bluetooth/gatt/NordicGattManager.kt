@@ -67,9 +67,9 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
     private fun connectToDevice() {
         connect(device)
             .useAutoConnect(false)
-            .retry(MAX_CONNECT_RETRY, 500)
+            .retry(MAX_CONNECT_RETRY, 1000)
             .usePreferredPhy(PhyRequest.PHY_LE_2M_MASK)
-            .timeout(5000)
+            .timeout(30000)
             .invalid {
                 Timber.d("$device connect INVALID")
                 executeDisconnect()

@@ -19,6 +19,7 @@ class RuuviTagScanner(
         private val from: String
 ) : IRuuviTagScanner {
 
+    private val bluetoothPermissionInteractor = BluetoothPermissionsInteractor(context)
     private var tagListener: IRuuviTagScanner.OnTagFoundListener? = null
 
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -71,7 +72,10 @@ class RuuviTagScanner(
 
     @SuppressLint("MissingPermission")
     override fun canScan(): Boolean =
-        bluetoothAdapter != null && scanner != null && bluetoothAdapter?.state == BluetoothAdapter.STATE_ON
+        bluetoothAdapter != null &&
+            scanner != null &&
+            bluetoothPermissionInteractor.requiredPermissionsGranted() &&
+            bluetoothAdapter?.state == BluetoothAdapter.STATE_ON
 
     override fun connect(macAddress: String, readLogsFrom: Date?, listener: IRuuviGattListener): Boolean {
         val device = devices[macAddress]

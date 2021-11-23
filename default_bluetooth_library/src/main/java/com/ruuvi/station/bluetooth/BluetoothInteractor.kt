@@ -2,6 +2,8 @@ package com.ruuvi.station.bluetooth
 
 import android.app.Application
 import android.content.Intent
+import android.os.Build
+import androidx.annotation.ChecksSdkIntAtLeast
 import com.ruuvi.station.bluetooth.util.Foreground
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import timber.log.Timber
@@ -16,6 +18,9 @@ class BluetoothInteractor(
 
     private var ruuviRangeNotifier: IRuuviTagScanner =
         RuuviTagScanner(application, "BluetoothInteractor")
+
+    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.S)
+    private val isApi31 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     private val listener: Foreground.Listener = object : Foreground.Listener {
         override fun onBecameForeground() {
@@ -32,8 +37,8 @@ class BluetoothInteractor(
             isRunningInForeground = false
 
             if (settings.allowBackgroundScan()) {
-                startBackgroundScanning()
                 startForegroundService()
+                if (!isApi31) startBackgroundScanning()
             } else {
                 Timber.d("background scanning disabled")
             }
@@ -58,8 +63,8 @@ class BluetoothInteractor(
 
     fun startForegroundScanning() {
         Timber.d("startForegroundScanning")
-        ScanningPeriodicReceiver.cancel(application)
         stopForegroundService()
+        if (!isApi31) ScanningPeriodicReceiver.cancel(application)
         startScan()
     }
 

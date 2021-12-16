@@ -34,7 +34,6 @@ class RuuviTagScanner(
                 .build()
 
     private val isScanning = AtomicBoolean(false)
-    private val crashResolver = BluetoothCrashResolver(context)
     private val sequenceMap = HashMap<String, Int>()
 
     init {
@@ -54,7 +53,6 @@ class RuuviTagScanner(
             foundListener: IRuuviTagScanner.OnTagFoundListener
     ) {
         Timber.d("[$from] startScanning")
-        crashResolver.start()
 
         if (!canScan()) {
             Timber.d("Can't scan bluetoothAdapter is null")

@@ -58,7 +58,7 @@ class ScanningPeriodicReceiver: BroadcastReceiver(){
         private fun createPendingIntent(context: Context): PendingIntent {
             Timber.d("ScanningPeriodicReceiver.createPendingIntent")
             val intent = Intent(context, ScanningPeriodicReceiver::class.java)
-            return PendingIntent.getBroadcast(context, 0, intent, 0)
+            return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         }
     }
 }

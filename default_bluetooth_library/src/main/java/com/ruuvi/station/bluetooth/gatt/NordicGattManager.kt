@@ -114,9 +114,15 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
 
     private fun canReadLogs(): Boolean {
         firmware?.let { firmware ->
-            val firstNumberIndex = firmware.indexOfFirst { it.isDigit() }
-            val version = SemVer.parse(firmware.subSequence(firstNumberIndex, firmware.length).toString())
-            return version.compareTo(supportLoggingVersion) != -1
+            try {
+                val firstNumberIndex = firmware.indexOfFirst { it.isDigit() }
+                if (firstNumberIndex == -1) return false
+                val version = SemVer.parse(firmware.subSequence(firstNumberIndex, firmware.length).toString())
+                return version.compareTo(supportLoggingVersion) != -1
+            } catch (e: IllegalArgumentException ) {
+                Timber.e(e)
+                return false
+            }
         }
         return false
     }

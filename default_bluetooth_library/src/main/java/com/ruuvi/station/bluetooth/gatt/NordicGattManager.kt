@@ -198,18 +198,29 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
                     syncedPoints++
                     gattCallback?.syncProgress(syncedPoints)
                 }
-                if (type.contentEquals("3A3010".hexStringToByteArray())) {
-                    val temp = value.toInt() / 100.0
-                    logs[idx].temperature = temp
+                when {
+                    type.contentEquals(temperatureType) -> {
+                        val temp = value.toInt() / 100.0
+                        logs[idx].temperature = temp
+                    }
+                    type.contentEquals(humidityType) -> {
+                        Timber.d("humidity $value")
+                        logs[idx].humidity = if (value.contentEquals(nullValue)) {
+                            null
+                        } else {
+                            value.toLong().toFloat() / 100.0
+                        }
+                    }
+                    type.contentEquals(pressureType) -> {
+                        Timber.d("pressure $value")
+                        logs[idx].pressure = if (value.contentEquals(nullValue)) {
+                            null
+                        } else {
+                            value.toLong().toDouble()
+                        }
+                    }
+                    else -> {}
                 }
-                if (type.contentEquals("3A3110".hexStringToByteArray())) {
-                    val humidity = value.toLong().toFloat() / 100.0
-                    logs[idx].humidity = humidity
-                }
-                if (type.contentEquals("3A3210".hexStringToByteArray())) {
-                    val pressure = value.toLong().toDouble()
-                    logs[idx].pressure = pressure
-                } else { }
             }
         }
     }
@@ -334,6 +345,11 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         private val firmwareCharacteristicUUID: UUID = UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb")
         private val nordicRxCharacteristicUUID: UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
         private val nordicTxCharacteristicUUID: UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
+
+        private val temperatureType = "3A3010".hexStringToByteArray()
+        private val humidityType = "3A3110".hexStringToByteArray()
+        private val pressureType = "3A3210".hexStringToByteArray()
+        private val nullValue = "FFFFFFFF".hexStringToByteArray()
 
         val supportLoggingVersion: SemVer = SemVer.parse("3.28.12")
         val readAllBytes = 0x3A3A11.toBytes().copyOfRange(1, 4)

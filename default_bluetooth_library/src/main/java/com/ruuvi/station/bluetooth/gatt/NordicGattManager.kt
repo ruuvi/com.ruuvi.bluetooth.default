@@ -23,10 +23,12 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
     private var syncedPoints = 0
 
     private var model: String? = null
+    private var serialNumber: String? = null
     private var firmware: String? = null
     private var manufacturer: String? = null
 
     private var modelCharacteristic: BluetoothGattCharacteristic? = null
+    private var serialNumberCharacteristic: BluetoothGattCharacteristic? = null
     private var manufacturerCharacteristic: BluetoothGattCharacteristic? = null
     private var firmwareCharacteristic: BluetoothGattCharacteristic? = null
     private var nordicTxCharacteristic: BluetoothGattCharacteristic? = null
@@ -60,6 +62,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         logs = mutableListOf()
         syncedPoints = 0
         model = null
+        serialNumber = null
         firmware = null
         manufacturer = null
     }
@@ -100,10 +103,11 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         val fw = firmware
         val model = model
         val manufacturer = manufacturer
-        if (fw != null && model != null && manufacturer != null) {
+        val serialNumberCollectedOrNotExpected = !serialNumber.isNullOrEmpty() || serialNumberCharacteristic == null
+        if (fw != null && model != null && manufacturer != null && serialNumberCollectedOrNotExpected) {
             val canReadLogs = canReadLogs()
             Timber.d("$device canReadLogs = $canReadLogs")
-            gattCallback?.deviceInfo(model, fw, canReadLogs)
+            gattCallback?.deviceInfo(model, fw, canReadLogs, serialNumber)
             if (canReadLogs && actionType == ActionType.GET_LOGS) {
                 registerToNordicRxTx()
             } else {
@@ -263,6 +267,20 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
             }
             .enqueue()
 
+        if (serialNumberCharacteristic != null) {
+            readCharacteristic(serialNumberCharacteristic)
+                .with { device, data ->
+                    serialNumber = data.getStringValue(0)
+                    Timber.d("$device serialNumberCharacteristic $serialNumber")
+                    checkIfInfoCollected()
+                }
+                .fail { device, status ->
+                    Timber.d("$device serialNumberCharacteristic FAIL status = $status")
+                    executeDisconnect()
+                }
+                .enqueue()
+        }
+
         readCharacteristic(manufacturerCharacteristic)
             .with { device, data ->
                 manufacturer = data.getStringValue(0)
@@ -295,6 +313,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
             val infoService = gatt.getService(infoService)
             if (infoService != null) {
                 modelCharacteristic = infoService.getCharacteristic(modelCharacteristicUUID)
+                serialNumberCharacteristic = infoService.getCharacteristic(serialNumberCharacteristicUUID)
                 manufacturerCharacteristic = infoService.getCharacteristic(manufacturerCharacteristicUUID)
                 firmwareCharacteristic = infoService.getCharacteristic(firmwareCharacteristicUUID)
             }
@@ -323,6 +342,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
             Timber.d("$device onServicesInvalidated")
             removeNotificationCallback(nordicTxCharacteristic)
             modelCharacteristic = null
+            serialNumberCharacteristic = null
             manufacturerCharacteristic = null
             firmwareCharacteristic = null
             nordicTxCharacteristic = null
@@ -342,6 +362,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         private val nordicRxTxService: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
         private val manufacturerCharacteristicUUID: UUID = UUID.fromString("00002a29-0000-1000-8000-00805f9b34fb")
         private val modelCharacteristicUUID: UUID = UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb")
+        private val serialNumberCharacteristicUUID: UUID = UUID.fromString("00002a25-0000-1000-8000-00805f9b34fb")
         private val firmwareCharacteristicUUID: UUID = UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb")
         private val nordicRxCharacteristicUUID: UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
         private val nordicTxCharacteristicUUID: UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")

@@ -5,13 +5,13 @@ android {
     compileSdkVersion 31
     buildToolsVersion '30.0.3'
 
-    namespace 'com.ruuvi.station.bluetooth.default'
+    namespace 'com.ruuvi.station.bluetooth.def'
 
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 31
-        versionCode 10411
-        versionName "1.4.11"
+        versionCode 10412
+        versionName "1.4.12"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }

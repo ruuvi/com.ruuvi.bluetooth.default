@@ -5,13 +5,13 @@ android {
     compileSdkVersion 31
     buildToolsVersion '30.0.3'
 
-    namespace 'com.ruuvi.station.bluetooth'
+    namespace 'com.ruuvi.station.bluetooth.default'
 
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 31
-        versionCode 10410
-        versionName "1.4.10"
+        versionCode 10411
+        versionName "1.4.11"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -37,7 +37,7 @@ def kodein_version = "6.5.0"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    implementation 'com.github.ruuvi:com.ruuvi.bluetooth:1.4.4'
+    implementation 'com.github.ruuvi:com.ruuvi.bluetooth:1.4.5'
     //implementation project(':bluetooth_library')
 
     implementation 'com.neovisionaries:nv-bluetooth:1.8'

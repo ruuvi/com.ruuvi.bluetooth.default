@@ -40,7 +40,6 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         gattCallback = callback
     }
 
-
     fun getLogs(readLogsFrom: Date?) {
         Timber.d("$device getLogs readLogsFrom = $readLogsFrom")
         clearState()
@@ -347,6 +346,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
             firmwareCharacteristic = null
             nordicTxCharacteristic = null
             nordicRxCharacteristic = null
+            gattCallback?.connected(false)
         }
     }
 

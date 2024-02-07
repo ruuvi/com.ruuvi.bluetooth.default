@@ -56,26 +56,36 @@ public class LeScanResult {
     }
 
     public static FoundRuuviTag from(String id, String url, byte[] rawData, int rssi) {
+        Integer offset = null;
         RuuviTagDecoder decoder = null;
         if (url != null && url.contains("#")) {
             String data = url.split("#")[1];
             rawData = parseByteDataFromB64(data);
             decoder = new DecodeFormat2and4();
         } else if (rawData != null) {
-            int protocolVersion = rawData[PROTOCOL_OFFSET];
-            switch (protocolVersion) {
-                case 3:
-                    decoder = new DecodeFormat3();
-                    break;
-                case 5:
-                    decoder = new DecodeFormat5();
-                    break;
-                default:
-                    Timber.d("Unknown tag protocol version: %1$s (PROTOCOL_OFFSET: %2$s)", protocolVersion, PROTOCOL_OFFSET);
+            offset = DecoderUtils.Companion.getActualDataOffset(rawData);
+            if (offset != null) {
+                int protocolVersion = rawData[offset] & 0xff;
+                switch (protocolVersion) {
+                    case 3:
+                        decoder = new DecodeFormat3();
+                        break;
+                    case 5:
+                        decoder = new DecodeFormat5();
+                        break;
+                    case 0xC5:
+                        decoder = new DecodeFormatC5();
+                        break;
+                    default: {
+                        Timber.d("Unknown tag protocol version: %1$s (PROTOCOL_OFFSET: %2$s) sensor %3$s", protocolVersion, offset, id);
+                    }
+                }
+            } else {
+                Timber.d("Offset not found");
             }
         }
-        if (decoder != null) {
-            FoundRuuviTag tag = decoder.decode(rawData, PROTOCOL_OFFSET);
+        if (decoder != null && offset != null) {
+            FoundRuuviTag tag = decoder.decode(rawData, offset);
             if (tag != null) {
                 tag.setId(id);
                 tag.setUrl(url);

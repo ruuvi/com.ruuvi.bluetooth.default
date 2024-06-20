@@ -8,6 +8,7 @@ import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.Service
 import android.content.Context
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
 import android.os.Handler
 import androidx.core.app.NotificationCompat
 import com.ruuvi.station.bluetooth.util.ScannerSettings
@@ -62,7 +63,11 @@ class BluetoothForegroundService : Service(), KodeinAware {
         Timber.d("Scheduling scanning with interval = $interval")
         handler.postDelayed(scanner, interval)
 
-        startForeground(ID, builder.build())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(ID, builder.build(), FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        } else {
+            startForeground(ID, builder.build())
+        }
         return START_NOT_STICKY
     }
 

@@ -105,6 +105,7 @@ class BluetoothForegroundService : Service(), KodeinAware {
 
         fun start(context: Context) {
             val serviceIntent = Intent(context, BluetoothForegroundService::class.java)
+            Timber.d("starting FS from companion")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent)
             } else {

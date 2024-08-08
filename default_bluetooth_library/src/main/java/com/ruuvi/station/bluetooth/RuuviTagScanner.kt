@@ -111,6 +111,7 @@ class RuuviTagScanner(
         Timber.d("disconnect $macAddress")
         gattManagers[macAddress]?.let { manager ->
             manager.executeDisconnect()
+            manager.setCallBack(null)
             return true
         }
         return false

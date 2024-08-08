@@ -36,7 +36,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
 
     override fun getGattCallback(): BleManagerGattCallback = GattCallback()
 
-    fun setCallBack(callback: IRuuviGattListener) {
+    fun setCallBack(callback: IRuuviGattListener?) {
         gattCallback = callback
     }
 
@@ -74,14 +74,14 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
             .timeout(30000)
             .invalid {
                 Timber.d("$device connect INVALID")
-                executeDisconnect()
+                gattCallback?.error("connect INVALID")
             }
             .done {
                 Timber.d("$device connect DONE")
             }
             .fail { device, status ->
                 Timber.d("$device connect FAIL status = $status")
-                executeDisconnect()
+                gattCallback?.error("connect FAIL")
             }
             .enqueue()
 

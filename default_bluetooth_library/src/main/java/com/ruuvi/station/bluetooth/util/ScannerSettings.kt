@@ -9,4 +9,6 @@ interface ScannerSettings {
     fun getNotificationTitle(): String
     fun getNotificationText(): String
     fun getNotificationPendingIntent(): PendingIntent?
+    fun getSimpleWidgetUpdatePendingIntent(): PendingIntent?
+    fun getComplexWidgetUpdatePendingIntent(): PendingIntent?
 }

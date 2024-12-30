@@ -6,7 +6,7 @@ const val TEMPERATURE_MINIMUM = -163.835
 const val TEMPERATURE_MAXIMUM = 163.835
 
 const val HUMIDITY_MINIMUM = 0.0
-const val HUMIDITY_MAXIMUM = 163.8350
+const val HUMIDITY_MAXIMUM = 100.0
 
 const val PRESSURE_MINIMUM = 50000.0
 const val PRESSURE_MAXIMUM = 115534.0
@@ -18,7 +18,7 @@ const val TX_POWER_MINIMUM = -40.0
 const val TX_POWER_MAXIMUM = 20.0
 
 const val VOLTAGE_MINIMUM = 1.600
-const val VOLTAGE_MAXIMUM = 3.646
+const val VOLTAGE_MAXIMUM = 7.620
 
 const val MOVEMENT_MINIMUM = 0
 const val MOVEMENT_MAXIMUM = 254
@@ -27,19 +27,19 @@ const val MEASUREMENT_SEQUENCE_MINIMUM = 0
 const val MEASUREMENT_SEQUENCE_MAXIMUM = 65534
 
 const val PM_MINIMUM = 0.0
-const val PM_MAXIMUM = 10000.0
+const val PM_MAXIMUM = 1000.0
 
 const val CO2_MINIMUM = 0
 const val CO2_MAXIMUM = 40000
 
-const val VOC_MINIMUM = 0
+const val VOC_MINIMUM = 1
 const val VOC_MAXIMUM = 500
 
-const val NOX_MINIMUM = 0
+const val NOX_MINIMUM = 1
 const val NOX_MAXIMUM = 500
 
 const val LUMINOSITY_MINIMUM = 0
-const val LUMINOSITY_MAXIMUM = 65535
+const val LUMINOSITY_MAXIMUM = 65534
 
 const val DBA_MINIMUM = 0.0
 const val DBA_MAXIMUM = 127.0
@@ -54,7 +54,7 @@ fun validateValues(sensor: FoundRuuviTag) : FoundRuuviTag{
     }
 
     sensor.pressure?.let {
-        if (it !in PRESSURE_MINIMUM..PRESSURE_MAXIMUM) sensor.pressure = null
+        if (it !in PRESSURE_MINIMUM .. PRESSURE_MAXIMUM) sensor.pressure = null
     }
 
     sensor.accelX?.let {
@@ -114,7 +114,7 @@ fun validateValues(sensor: FoundRuuviTag) : FoundRuuviTag{
     }
 
     sensor.luminosity?.let {
-        if (it !in LUMINOSITY_MINIMUM..LUMINOSITY_MAXIMUM) sensor.luminosity = null
+        if (it !in LUMINOSITY_MINIMUM .. LUMINOSITY_MAXIMUM) sensor.luminosity = null
     }
 
     sensor.dBaAvg?.let {

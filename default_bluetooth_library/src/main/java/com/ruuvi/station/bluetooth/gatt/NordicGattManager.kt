@@ -265,7 +265,6 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
                 gattCallback?.heartbeat(data.toHexString())
             } else if (data.toHexString().endsWith(historyEndAir, true)) {
                 Timber.d("History end")
-                logs.removeAll { x -> x.temperature == 0.toDouble() && x.humidity == 0.toDouble() && x.pressure == 0.toDouble() }
                 gattCallback?.dataReady(logs)
                 executeDisconnect()
             } else {
@@ -276,7 +275,11 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
                     val startIndex = 5 + i * recordLength
                     if (data.getOrNull(startIndex + recordLength - 1) != null) {
                         val recordData = data.copyOfRange(startIndex, startIndex + recordLength)
-                        decodeAirData(recordData)
+                        val logReading = decodeAirData(recordData)
+                        logReading.id = device.address
+                        logs.add(logReading)
+                        syncedPoints++
+                        gattCallback?.syncProgress(syncedPoints)
                     }
                     else {
                         Timber.d("processDataAir noData ${startIndex+recordLength} ${data.size}")
@@ -286,7 +289,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         }
     }
 
-    private fun decodeAirData(data: ByteArray) {
+    private fun decodeAirData(data: ByteArray): LogReading {
         val timestamp = data.copyOfRange(0, 4)
         val time = Date(timestamp.toLong() * 1000)
         var result = FoundRuuviTag()
@@ -318,6 +321,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         result.voltage = ((data[VOLTAGE_POSITION ].toInt() and 0xFF).toDouble() * 0.03).roundHalfUp(4)
         result = validateValues(result)
         Timber.d("processDataAir time = $time DECODED $result" )
+        return LogReading(time, result)
     }
 
     private fun getReadInterval(): ByteArray {

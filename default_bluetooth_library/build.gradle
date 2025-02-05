@@ -10,8 +10,8 @@ android {
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 34
-        versionCode 10601
-        versionName "1.6.1"
+        versionCode 10602
+        versionName "1.6.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -37,7 +37,7 @@ def kodein_version = "6.5.0"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    implementation 'com.github.ruuvi:com.ruuvi.bluetooth:1.5.0'
+    implementation 'com.github.ruuvi:com.ruuvi.bluetooth:1.5.1'
     //implementation project(':bluetooth_library')
 
     implementation 'com.neovisionaries:nv-bluetooth:1.8'

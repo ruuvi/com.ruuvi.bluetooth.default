@@ -3,8 +3,10 @@ package com.ruuvi.station.bluetooth.gatt
 import android.bluetooth.*
 import android.content.Context
 import android.os.Build
+import com.ruuvi.station.bluetooth.FoundRuuviTag
 import com.ruuvi.station.bluetooth.IRuuviGattListener
 import com.ruuvi.station.bluetooth.LogReading
+import com.ruuvi.station.bluetooth.decoder.validateValues
 import com.ruuvi.station.bluetooth.util.extensions.*
 import net.swiftzer.semver.SemVer
 import no.nordicsemi.android.ble.BleManager
@@ -26,6 +28,8 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
     private var serialNumber: String? = null
     private var firmware: String? = null
     private var manufacturer: String? = null
+    private var isAir: Boolean = false
+    private var airInitialized = true
 
     private var modelCharacteristic: BluetoothGattCharacteristic? = null
     private var serialNumberCharacteristic: BluetoothGattCharacteristic? = null
@@ -103,7 +107,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         val model = model
         val manufacturer = manufacturer
         val serialNumberCollectedOrNotExpected = !serialNumber.isNullOrEmpty() || serialNumberCharacteristic == null
-        if (fw != null && model != null && manufacturer != null && serialNumberCollectedOrNotExpected) {
+        if (fw != null && model != null && manufacturer != null && serialNumberCollectedOrNotExpected && airInitialized) {
             val canReadLogs = canReadLogs()
             Timber.d("$device canReadLogs = $canReadLogs")
             gattCallback?.deviceInfo(model, fw, canReadLogs, serialNumber)
@@ -115,7 +119,24 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         }
     }
 
+    private fun initializeAir() {
+        airInitialized = false
+        Timber.d("$device initializeAir mtu = $mtu")
+        requestMtu(512)
+            .done {
+                airInitialized = true
+                checkIfInfoCollected()
+                Timber.d("$device initialize MTU ADJUSTED = $mtu")
+            }
+            .fail { device, status ->
+                Timber.d("$device initialize MTU set fail = $status")
+            }
+            .enqueue()
+    }
+
     private fun canReadLogs(): Boolean {
+        if (isAir) return true
+
         firmware?.let { firmware ->
             try {
                 val firstNumberIndex = firmware.indexOfFirst { it.isDigit() }
@@ -158,16 +179,26 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         setNotificationCallback(nordicTxCharacteristic)
             .with { device, data ->
                 Timber.d("$device notificationCallback nordicTxCharacteristic data = $data")
-                processData(device, data)
+                if (isAir) {
+                    processDataAir(device, data)
+                } else {
+                    processData(device, data)
+                }
             }
 
         enableNotifications(nordicTxCharacteristic).enqueue()
         startReadingLogs()
     }
 
+    fun ByteArray.asString (): String{
+        return this.joinToString (" ") { String.format("%02X", it.toInt() and 0xff) }
+    }
+
     private fun startReadingLogs() {
         Timber.d("$device startReadingLogs")
         val readInterval = getReadInterval()
+        Timber.d("$device startReadingLogs readInterval ${readInterval.asString()}")
+
         nordicRxCharacteristic?.value = readInterval
         writeCharacteristic(nordicRxCharacteristic, readInterval, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
             .fail { device, status ->
@@ -181,8 +212,8 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         dataResponse.value?.let { data ->
             if (data[0] == 5.toByte()) {
                 gattCallback?.heartbeat(data.toHexString())
-            } else if (data.toHexString().endsWith("ffffffffffffffff")) {
-                Timber.d("")
+            } else if (data.toHexString().endsWith(historyEnd, ignoreCase = true)) {
+                Timber.d("History end")
                 logs.removeAll { x -> x.temperature == 0.toDouble() && x.humidity == 0.toDouble() && x.pressure == 0.toDouble() }
                 gattCallback?.dataReady(logs)
                 executeDisconnect()
@@ -228,6 +259,67 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         }
     }
 
+    private fun processDataAir(device: BluetoothDevice, dataResponse: Data) {
+        dataResponse.value?.let { data ->
+            if (data[0] == 0xE0.toByte()) {
+                gattCallback?.heartbeat(data.toHexString())
+            } else if (data.toHexString().endsWith(historyEndAir, true)) {
+                Timber.d("History end")
+                logs.removeAll { x -> x.temperature == 0.toDouble() && x.humidity == 0.toDouble() && x.pressure == 0.toDouble() }
+                gattCallback?.dataReady(logs)
+                executeDisconnect()
+            } else {
+                val recordsCount = data.getOrNull(3) ?: 0
+                val recordLength = data.getOrNull(4) ?: 0
+                Timber.d("processDataAir recordsCount = $recordsCount recordLength = $recordLength")
+                for (i in 0 ..< recordsCount) {
+                    val startIndex = 5 + i * recordLength
+                    if (data.getOrNull(startIndex + recordLength - 1) != null) {
+                        val recordData = data.copyOfRange(startIndex, startIndex + recordLength)
+                        decodeAirData(recordData)
+                    }
+                    else {
+                        Timber.d("processDataAir noData ${startIndex+recordLength} ${data.size}")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun decodeAirData(data: ByteArray) {
+        val timestamp = data.copyOfRange(0, 4)
+        val time = Date(timestamp.toLong() * 1000)
+        var result = FoundRuuviTag()
+        result.dataFormat = DATA_FORMAT
+        result.temperature = (((data[TEMPERATURE_POSITION ].toInt() shl 8) or
+                (data[TEMPERATURE_POSITION + 1].toInt() and 0xFF)) / 200.0).roundHalfUp(4)
+        result.humidity = (((data[HUMIDITY_POSITION].toInt() shl 8) or
+                (data[HUMIDITY_POSITION + 1].toInt() and 0xFF)) / 400.0).roundHalfUp(4)
+        result.pressure = ((data[PRESSURE_POSITION].toInt() and 0xFF) shl 8 or
+                (data[PRESSURE_POSITION + 1].toInt() and 0xFF)).toDouble() + 50000
+        result.pm1 = (((data[PM1_POSITION].toInt() and 0xFF) shl 8 or
+                (data[PM1_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+        result.pm25 = (((data[PM25_POSITION].toInt() and 0xFF) shl 8 or
+                (data[PM25_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+        result.pm4 = (((data[PM4_POSITION].toInt() and 0xFF) shl 8 or
+                (data[PM4_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+        result.pm10 = (((data[PM10_POSITION].toInt() and 0xFF) shl 8 or
+                (data[PM10_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+        result.co2 = ((data[CO2_POSITION].toInt() and 0xFF) shl 8 or
+                (data[CO2_POSITION + 1].toInt() and 0xFF))
+        result.voc = ((data[VOC_POSITION].toInt() and 0x01) shl 8) or
+                (data[VOC_POSITION + 1].toInt() and 0xFF)
+        result.nox = ((data[NOX_POSITION].toInt() and 0x01) shl 8) or
+                (data[NOX_POSITION + 1].toInt() and 0xFF)
+        result.luminosity = ((data[LUMINOSITY_POSITION].toInt() and 0xFF) shl 8) or
+                (data[LUMINOSITY_POSITION + 1].toInt() and 0xFF)
+        result.dBaAvg = (((data[DBA_AVG_POSITION].toInt() and 0xFF).toDouble()) / 2).roundHalfUp(2)
+        result.dBaPeak = (((data[DBA_PEAK_POSITION].toInt() and 0xFF).toDouble()) / 2).roundHalfUp(2)
+        result.voltage = ((data[VOLTAGE_POSITION ].toInt() and 0xFF).toDouble() * 0.03).roundHalfUp(4)
+        result = validateValues(result)
+        Timber.d("processDataAir time = $time DECODED $result" )
+    }
+
     private fun getReadInterval(): ByteArray {
         val now = System.currentTimeMillis() / 1000
         var then: Long = 0
@@ -236,11 +328,25 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         }
         val nowBytes = now.toBytes().copyOfRange(4, 8)
         val thenBytes = then.toBytes().copyOfRange(4, 8)
-        return readAllBytes.plus(nowBytes).plus(thenBytes)
+        return (if (isAir) readAllBytesAir else readAllBytes).plus(nowBytes).plus(thenBytes)
     }
 
     private fun readFromInfoService() {
         Timber.d("$device reading from Info Service")
+
+        readCharacteristic(modelCharacteristic)
+            .with { device, data ->
+                model = data.getStringValue(0)
+                Timber.d("$device modelCharacteristic $model")
+                isAir = model == ruuviAir
+                if (isAir) initializeAir()
+                checkIfInfoCollected()
+            }
+            .fail { device, status ->
+                Timber.d("$device modelCharacteristic FAIL status = $status")
+                executeDisconnect()
+            }
+            .enqueue()
 
         readCharacteristic(firmwareCharacteristic)
             .with { device, data ->
@@ -250,18 +356,6 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
             }
             .fail { device, status ->
                 Timber.d("$device firmwareCharacteristic FAIL status = $status")
-                executeDisconnect()
-            }
-            .enqueue()
-
-        readCharacteristic(modelCharacteristic)
-            .with { device, data ->
-                model = data.getStringValue(0)
-                Timber.d("$device modelCharacteristic $model")
-                checkIfInfoCollected()
-            }
-            .fail { device, status ->
-                Timber.d("$device modelCharacteristic FAIL status = $status")
                 executeDisconnect()
             }
             .enqueue()
@@ -295,8 +389,6 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
 
     private inner class GattCallback: BleManagerGattCallback() {
         override fun initialize() {
-            super.initialize()
-            Timber.d("$device initialize")
             readFromInfoService()
         }
 
@@ -328,8 +420,13 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
             latency: Int,
             timeout: Int
         ) {
-            Timber.d("$device onConnectionUpdated interval = $interval latency = $latency timeout = $timeout")
+            Timber.d("$device onConnectionUpdated interval = $interval latency = $latency timeout = $timeout mtu = $mtu")
             super.onConnectionUpdated(gatt, interval, latency, timeout)
+        }
+
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
+            super.onMtuChanged(gatt, mtu)
+            Timber.d("$device onMtuChanged mtu = $mtu")
         }
 
         override fun onDeviceReady() {
@@ -370,9 +467,30 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         private val temperatureType = "3A3010".hexStringToByteArray()
         private val humidityType = "3A3110".hexStringToByteArray()
         private val pressureType = "3A3210".hexStringToByteArray()
+        private val historyEnd = "FFFFFFFFFFFFFFFF"
+        private val historyEndAir = "003B200020"
         private val nullValue = "FFFFFFFF".hexStringToByteArray()
+        private val ruuviAir = "Ruuvi Air"
 
         val supportLoggingVersion: SemVer = SemVer.parse("3.28.12")
         val readAllBytes = 0x3A3A11.toBytes().copyOfRange(1, 4)
+        val readAllBytesAir = 0x3B0021.toBytes().copyOfRange(1, 4)
+
+
+        const val DATA_FORMAT = 0xE0
+        const val TEMPERATURE_POSITION = 4
+        const val HUMIDITY_POSITION = 6
+        const val PRESSURE_POSITION = 8
+        const val PM1_POSITION = 10
+        const val PM25_POSITION = 12
+        const val PM4_POSITION = 14
+        const val PM10_POSITION = 16
+        const val CO2_POSITION = 18
+        const val VOC_POSITION = 20
+        const val NOX_POSITION = 22
+        const val LUMINOSITY_POSITION = 24
+        const val DBA_AVG_POSITION = 26
+        const val DBA_PEAK_POSITION = 27
+        const val VOLTAGE_POSITION = 28
     }
 }

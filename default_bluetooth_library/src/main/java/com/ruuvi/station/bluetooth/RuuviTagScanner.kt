@@ -149,13 +149,16 @@ class RuuviTagScanner(
                     isLeExtendedAdvertisingSupported
                 )
                 val parsed = leresult.parse()
+
+                var connectable = it.scanRecord?.deviceName != null
+
+                if (connectable) {
+                    devices[leresult.device.address] = leresult
+                } else {
+                    connectable = gattManagers[it.device.address]?.isConnected == true
+                }
+
                 if (parsed != null) {
-                    var connectable = it.scanRecord?.deviceName != null
-                    if (connectable) {
-                        devices[leresult.device.address] = leresult
-                    } else if (gattManagers[it.device.address]?.isConnected == true) {
-                        connectable = true
-                    }
                     parsed.connectable = connectable
                     sendDataToListener(parsed)
                 }

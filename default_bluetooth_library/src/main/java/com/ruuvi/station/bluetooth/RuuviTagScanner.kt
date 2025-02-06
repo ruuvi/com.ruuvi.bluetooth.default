@@ -152,6 +152,10 @@ class RuuviTagScanner(
 
                 var connectable = it.scanRecord?.deviceName != null
 
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !connectable) {
+                    connectable = it.isConnectable
+                }
+
                 if (connectable) {
                     devices[leresult.device.address] = leresult
                 } else {

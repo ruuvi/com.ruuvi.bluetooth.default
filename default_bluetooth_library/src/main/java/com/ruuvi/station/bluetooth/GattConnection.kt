@@ -3,6 +3,8 @@ package com.ruuvi.station.bluetooth
 import android.bluetooth.*
 import android.content.Context
 import android.os.Build
+import com.ruuvi.station.bluetooth.contract.IRuuviGattListener
+import com.ruuvi.station.bluetooth.contract.LogReading
 import com.ruuvi.station.bluetooth.util.extensions.hexStringToByteArray
 import com.ruuvi.station.bluetooth.util.extensions.toHexString
 import com.ruuvi.station.bluetooth.util.extensions.toInt

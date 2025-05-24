@@ -7,6 +7,9 @@ import android.bluetooth.le.*
 import android.content.Context
 import android.os.Build
 import android.os.ParcelUuid
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
+import com.ruuvi.station.bluetooth.contract.IRuuviGattListener
+import com.ruuvi.station.bluetooth.contract.IRuuviTagScanner
 import com.ruuvi.station.bluetooth.decoder.BleScanResult
 import com.ruuvi.station.bluetooth.gatt.NordicGattManager
 import timber.log.Timber
@@ -42,6 +45,19 @@ class RuuviTagScanner(
             return scanSettings.build()
         }
 
+    private val scanSettingsBackground: ScanSettings
+        get() {
+            val scanSettings =
+                ScanSettings.Builder()
+                    .setReportDelay(0)
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                scanSettings.setLegacy(false)
+            }
+            return scanSettings.build()
+        }
+
     private val isScanning = AtomicBoolean(false)
     private val sequenceMap = HashMap<String, Int>()
 
@@ -62,7 +78,8 @@ class RuuviTagScanner(
 
     @SuppressLint("MissingPermission")
     override fun startScanning(
-            foundListener: IRuuviTagScanner.OnTagFoundListener
+        foundListener: IRuuviTagScanner.OnTagFoundListener,
+        background: Boolean
     ) {
         Timber.d("[$from] startScanning")
 
@@ -74,6 +91,12 @@ class RuuviTagScanner(
         if (!isScanning.compareAndSet(false, true)) {
             Timber.d("Already scanning!")
             return
+        }
+
+        val scanSettings = if (background) {
+            scanSettingsBackground
+        } else {
+            scanSettings
         }
 
         this.tagListener = foundListener

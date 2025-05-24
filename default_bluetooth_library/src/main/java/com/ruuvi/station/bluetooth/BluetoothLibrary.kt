@@ -1,6 +1,8 @@
 package com.ruuvi.station.bluetooth
 
 import android.app.Application
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
+import com.ruuvi.station.bluetooth.contract.IRuuviTagScanner
 import com.ruuvi.station.bluetooth.decoder.BleScanResult
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import com.ruuvi.station.bluetooth.util.extensions.hexStringToByteArray
@@ -13,9 +15,10 @@ object BluetoothLibrary {
         get() = this::bluetoothInteractor.isInitialized
 
     fun getBluetoothInteractor(
-            application: Application,
-            onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
-            settings: ScannerSettings): BluetoothInteractor {
+        application: Application,
+        onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
+        settings: ScannerSettings): BluetoothInteractor
+    {
         if (!isInitialized) {
             bluetoothInteractor = BluetoothInteractor(application, onTagsFoundListener, settings)
         }

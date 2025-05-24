@@ -1,6 +1,6 @@
 package com.ruuvi.station.bluetooth.decoder
 
-import com.ruuvi.station.bluetooth.FoundRuuviTag
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
 import com.ruuvi.station.bluetooth.util.extensions.roundHalfUp
 import timber.log.Timber
 

@@ -2,7 +2,7 @@ package com.ruuvi.station.bluetooth.decoder;
 
 import static com.ruuvi.station.bluetooth.decoder.ValidateValuesKt.validateValues;
 
-import com.ruuvi.station.bluetooth.FoundRuuviTag;
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

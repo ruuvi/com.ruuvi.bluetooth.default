@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothDevice
 import com.neovisionaries.bluetooth.ble.advertising.ADManufacturerSpecific
 import com.neovisionaries.bluetooth.ble.advertising.ADPayloadParser
 import com.neovisionaries.bluetooth.ble.advertising.EddystoneURL
-import com.ruuvi.station.bluetooth.FoundRuuviTag
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
 import timber.log.Timber
 
 class BleScanResult (

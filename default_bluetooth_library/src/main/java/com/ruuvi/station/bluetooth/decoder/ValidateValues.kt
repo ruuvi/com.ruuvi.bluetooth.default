@@ -1,6 +1,6 @@
 package com.ruuvi.station.bluetooth.decoder
 
-import com.ruuvi.station.bluetooth.FoundRuuviTag
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
 
 const val TEMPERATURE_MINIMUM = -163.835
 const val TEMPERATURE_MAXIMUM = 163.835
@@ -44,7 +44,7 @@ const val LUMINOSITY_MAXIMUM = 65534
 const val DBA_MINIMUM = 0.0
 const val DBA_MAXIMUM = 127.0
 
-fun validateValues(sensor: FoundRuuviTag) : FoundRuuviTag{
+fun validateValues(sensor: FoundRuuviTag) : FoundRuuviTag {
     sensor.temperature?.let {
         if (it !in TEMPERATURE_MINIMUM..TEMPERATURE_MAXIMUM) sensor.temperature = null
     }

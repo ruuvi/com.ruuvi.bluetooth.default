@@ -3,9 +3,9 @@ package com.ruuvi.station.bluetooth.gatt
 import android.bluetooth.*
 import android.content.Context
 import android.os.Build
-import com.ruuvi.station.bluetooth.FoundRuuviTag
-import com.ruuvi.station.bluetooth.IRuuviGattListener
-import com.ruuvi.station.bluetooth.LogReading
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
+import com.ruuvi.station.bluetooth.contract.IRuuviGattListener
+import com.ruuvi.station.bluetooth.contract.LogReading
 import com.ruuvi.station.bluetooth.decoder.validateValues
 import com.ruuvi.station.bluetooth.util.extensions.*
 import net.swiftzer.semver.SemVer

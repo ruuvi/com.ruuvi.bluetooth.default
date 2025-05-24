@@ -10,6 +10,7 @@ import android.app.Service
 import android.content.Context
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
 import android.os.Handler
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import org.kodein.di.Kodein
@@ -25,13 +26,13 @@ class BluetoothForegroundService : Service(), KodeinAware {
     override val kodein: Kodein by kodein()
     private val scannerSettings: ScannerSettings by instance()
     val bluetoothInteractor: BluetoothInteractor by instance()
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
 
     private var scanner = object : Runnable {
         var lastWidgetUpdate = 0L
         override fun run() {
             Timber.d("Start scanning in foreground service")
-            bluetoothInteractor.startScan()
+            bluetoothInteractor.startScan(true)
             Timer(false).schedule(bluetoothInteractor.getWorkTime()) {
                 bluetoothInteractor.stopScanningFromBackground()
             }
@@ -72,13 +73,14 @@ class BluetoothForegroundService : Service(), KodeinAware {
 
         val interval = scannerSettings.getBackgroundScanIntervalMilliseconds()
         Timber.d("Scheduling scanning with interval = $interval")
-        handler.postDelayed(scanner, interval)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(ID, builder.build(), FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         } else {
             startForeground(ID, builder.build())
         }
+
+        handler.postDelayed(scanner, interval)
         return START_NOT_STICKY
     }
 

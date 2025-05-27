@@ -3,6 +3,7 @@ package com.ruuvi.station.bluetooth
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
@@ -51,7 +52,11 @@ class BLEScanWorker(
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
-        return ForegroundInfo(1, notification)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        } else {
+            ForegroundInfo(1, notification)
+        }
     }
 
     companion object {

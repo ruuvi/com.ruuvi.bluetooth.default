@@ -19,7 +19,8 @@ class BLEScanWorker(
 ) : CoroutineWorker(ctx, params) {
 
     override suspend fun doWork(): Result {
-        setForeground(createForegroundInfo())
+        //disabled because it works ok without notification
+        //setForeground(createForegroundInfo())
 
         Timber.d("BLEScanWorker doWork")
 

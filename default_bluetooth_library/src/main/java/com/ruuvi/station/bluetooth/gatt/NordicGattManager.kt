@@ -294,6 +294,12 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         val time = Date(timestamp.toLong() * 1000)
         var result = FoundRuuviTag()
         result.dataFormat = DATA_FORMAT
+        val dbaInstantFlag = isBitSet(data[FLAGS_POSITION], 3)
+        val dbaAvgFlag = isBitSet(data[FLAGS_POSITION], 4)
+        val dbaPeakFlag = isBitSet(data[FLAGS_POSITION], 5)
+        val vocFlag = isBitSet(data[FLAGS_POSITION], 6)
+        val noxFlag = isBitSet(data[FLAGS_POSITION], 7)
+
         result.temperature = (((data[TEMPERATURE_POSITION ].toInt() shl 8) or
                 (data[TEMPERATURE_POSITION + 1].toInt() and 0xFF)) / 200.0).roundHalfUp(4)
         result.humidity = (((data[HUMIDITY_POSITION].toInt() shl 8) or
@@ -301,27 +307,34 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         result.pressure = ((data[PRESSURE_POSITION].toInt() and 0xFF) shl 8 or
                 (data[PRESSURE_POSITION + 1].toInt() and 0xFF)).toDouble() + 50000
         result.pm1 = (((data[PM1_POSITION].toInt() and 0xFF) shl 8 or
-                (data[PM1_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+                (data[PM1_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(1)
         result.pm25 = (((data[PM25_POSITION].toInt() and 0xFF) shl 8 or
-                (data[PM25_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+                (data[PM25_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(1)
         result.pm4 = (((data[PM4_POSITION].toInt() and 0xFF) shl 8 or
-                (data[PM4_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+                (data[PM4_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(1)
         result.pm10 = (((data[PM10_POSITION].toInt() and 0xFF) shl 8 or
-                (data[PM10_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(2)
+                (data[PM10_POSITION + 1].toInt() and 0xFF)).toDouble() / 10).roundHalfUp(1)
         result.co2 = ((data[CO2_POSITION].toInt() and 0xFF) shl 8 or
                 (data[CO2_POSITION + 1].toInt() and 0xFF))
-        result.voc = ((data[VOC_POSITION].toInt() and 0x01) shl 8) or
-                (data[VOC_POSITION + 1].toInt() and 0xFF)
-        result.nox = ((data[NOX_POSITION].toInt() and 0x01) shl 8) or
-                (data[NOX_POSITION + 1].toInt() and 0xFF)
-        result.luminosity = ((data[LUMINOSITY_POSITION].toInt() and 0xFF) shl 8) or
-                (data[LUMINOSITY_POSITION + 1].toInt() and 0xFF)
-        result.dBaAvg = (((data[DBA_AVG_POSITION].toInt() and 0xFF).toDouble()) / 2).roundHalfUp(2)
-        result.dBaPeak = (((data[DBA_PEAK_POSITION].toInt() and 0xFF).toDouble()) / 2).roundHalfUp(2)
-        result.voltage = ((data[VOLTAGE_POSITION ].toInt() and 0xFF).toDouble() * 0.03).roundHalfUp(4)
+        result.voc =((data[VOC_POSITION].toInt() and 0xFF) shl 1) or if (vocFlag) 1 else 0
+        result.nox = ((data[NOX_POSITION].toInt() and 0xFF) shl 1) or if (noxFlag) 1 else 0
+        result.luminosity = ((((data[LUMINOSITY_POSITION].toInt() and 0xFF) shl 16) or
+                ((data[LUMINOSITY_POSITION + 1].toInt() and 0xFF) shl 8) or
+                (data[LUMINOSITY_POSITION + 2].toInt() and 0xFF)) / 100.0).roundHalfUp(2)
+        result.dBaInst = ((((data[DBA_INST_POSITION].toInt() and 0xFF) shl 1) or if (dbaInstantFlag) 1 else 0) / 5.0 + 18).roundHalfUp(2)
+        result.dBaAvg = ((((data[DBA_AVG_POSITION].toInt() and 0xFF) shl 1) or if (dbaAvgFlag) 1 else 0) / 5.0 + 18).roundHalfUp(2)
+        result.dBaPeak = ((((data[DBA_PEAK_POSITION].toInt() and 0xFF) shl 1) or if (dbaPeakFlag) 1 else 0) / 5.0 + 18).roundHalfUp(2)
+        result.measurementSequenceNumber = ((data[SEQUENCE_POSITION].toInt() and 0xFF) shl 16) or
+                ((data[SEQUENCE_POSITION + 1].toInt() and 0xFF) shl 8) or
+                (data[SEQUENCE_POSITION + 2].toInt() and 0xFF)
         result = validateValues(result)
         Timber.d("processDataAir time = $time DECODED $result" )
         return LogReading(time, result)
+    }
+
+    fun isBitSet(byte: Byte, bitIndex: Int): Boolean {
+        require(bitIndex in 0..7) { "bitIndex must be in 0..7" }
+        return (byte.toInt() shr bitIndex and 1) == 1
     }
 
     private fun getReadInterval(): ByteArray {
@@ -481,7 +494,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         val readAllBytesAir = 0x3B0021.toBytes().copyOfRange(1, 4)
 
 
-        const val DATA_FORMAT = 0xE0
+        const val DATA_FORMAT = 0xE1
         const val TEMPERATURE_POSITION = 4
         const val HUMIDITY_POSITION = 6
         const val PRESSURE_POSITION = 8
@@ -491,10 +504,12 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         const val PM10_POSITION = 16
         const val CO2_POSITION = 18
         const val VOC_POSITION = 20
-        const val NOX_POSITION = 22
-        const val LUMINOSITY_POSITION = 24
+        const val NOX_POSITION = 21
+        const val LUMINOSITY_POSITION = 22
+        const val DBA_INST_POSITION = 25
         const val DBA_AVG_POSITION = 26
         const val DBA_PEAK_POSITION = 27
-        const val VOLTAGE_POSITION = 28
+        const val SEQUENCE_POSITION = 28
+        const val FLAGS_POSITION = 31
     }
 }

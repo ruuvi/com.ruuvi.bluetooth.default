@@ -28,8 +28,8 @@ class DecodeFormatE0: RuuviTagDecoder {
                 (data[VOC_POSITION + 1 + offset].toInt() and 0xFF)
         result.nox = ((data[NOX_POSITION + offset].toInt() and 0x01) shl 8) or
                 (data[NOX_POSITION + 1 + offset].toInt() and 0xFF)
-        result.luminosity = ((data[LUMINOSITY_POSITION + offset].toInt() and 0xFF) shl 8) or
-                (data[LUMINOSITY_POSITION + 1 + offset].toInt() and 0xFF)
+        result.luminosity = (((data[LUMINOSITY_POSITION + offset].toInt() and 0xFF) shl 8) or
+                (data[LUMINOSITY_POSITION + 1 + offset].toInt() and 0xFF)).toDouble()
         result.dBaAvg = (((data[DBA_AVG_POSITION + offset].toInt() and 0xFF).toDouble()) / 2).roundHalfUp(2)
         result.dBaPeak = (((data[DBA_PEAK_POSITION + offset].toInt() and 0xFF).toDouble()) / 2).roundHalfUp(2)
         result.measurementSequenceNumber = ((data[SEQUENCE_POSITION + offset].toInt() and 0xFF) shl 8) or

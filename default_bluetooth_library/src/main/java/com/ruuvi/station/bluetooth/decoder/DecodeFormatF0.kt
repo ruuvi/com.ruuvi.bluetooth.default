@@ -21,7 +21,7 @@ class DecodeFormatF0: RuuviTagDecoder {
         result.co2 = decodeLogarithmic(data[CO2_POSITION + offset].toInt() and 0xFF, CO2_DECODE_BASE).roundHalfUp(0).toInt()
         result.voc = decodeLogarithmic(data[VOC_POSITION + offset].toInt() and 0xFF, VOC_DECODE_BASE).roundHalfUp(0).toInt() + 1
         result.nox = decodeLogarithmic(data[NOX_POSITION + offset].toInt() and 0xFF, NOX_DECODE_BASE).roundHalfUp(0).toInt() + 1
-        result.luminosity = decodeLogarithmic(data[LUMINOSITY_POSITION + offset].toInt() and 0xFF, LUMINOSITY_DECODE_BASE).toInt()
+        result.luminosity = decodeLogarithmic(data[LUMINOSITY_POSITION + offset].toInt() and 0xFF, LUMINOSITY_DECODE_BASE)
         result.dBaAvg = ((data[DBA_AVG_POSITION + offset].toInt() and 0xFF) / 2.0).roundHalfUp(2)
 
         result = validateValues(result)

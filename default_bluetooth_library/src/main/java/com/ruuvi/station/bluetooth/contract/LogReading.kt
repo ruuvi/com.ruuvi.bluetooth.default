@@ -16,7 +16,7 @@ data class LogReading (
     var co2: Int? = null,
     var voc: Int? = null,
     var nox: Int? = null,
-    var luminosity: Int? = null,
+    var luminosity: Double? = null,
     var dBaAvg: Double? = null,
     var dBaPeak: Double? = null,
     var voltage: Double? = null,

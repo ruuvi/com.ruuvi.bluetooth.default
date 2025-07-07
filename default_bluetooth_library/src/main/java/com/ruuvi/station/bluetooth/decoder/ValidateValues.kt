@@ -38,8 +38,8 @@ const val VOC_MAXIMUM = 500
 const val NOX_MINIMUM = 1
 const val NOX_MAXIMUM = 500
 
-const val LUMINOSITY_MINIMUM = 0
-const val LUMINOSITY_MAXIMUM = 65534
+const val LUMINOSITY_MINIMUM = 0.0
+const val LUMINOSITY_MAXIMUM = 65534.0
 
 const val DBA_MINIMUM = 0.0
 const val DBA_MAXIMUM = 127.0

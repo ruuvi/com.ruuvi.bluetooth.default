@@ -55,8 +55,10 @@ class BleScanResult (
                     decoder = when (protocolVersion) {
                         3 -> DecodeFormat3()
                         5 -> DecodeFormat5()
+                        6 -> if (skipLegacy) null else DecodeFormat6()
                         0xC5 -> DecodeFormatC5()
                         0xE0 -> DecodeFormatE0()
+                        0xE1 -> DecodeFormatE1()
                         0xF0 -> if (skipLegacy) null else DecodeFormatF0()
                         else -> {
                             Timber.d("Unknown tag protocol version: $protocolVersion (PROTOCOL_OFFSET: $offset) sensor $id")

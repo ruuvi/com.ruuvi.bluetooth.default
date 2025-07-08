@@ -293,7 +293,8 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         val timestamp = data.copyOfRange(0, 4)
         val time = Date(timestamp.toLong() * 1000)
         var result = FoundRuuviTag()
-        result.dataFormat = DATA_FORMAT
+        result.dataFormat = data[DATA_FORMAT_POSITION].toInt() and 0xFF
+
         val dbaInstantFlag = isBitSet(data[FLAGS_POSITION], 3)
         val dbaAvgFlag = isBitSet(data[FLAGS_POSITION], 4)
         val dbaPeakFlag = isBitSet(data[FLAGS_POSITION], 5)
@@ -485,7 +486,7 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
         private val humidityType = "3A3110".hexStringToByteArray()
         private val pressureType = "3A3210".hexStringToByteArray()
         private val historyEnd = "FFFFFFFFFFFFFFFF"
-        private val historyEndAir = "003B200020"
+        private val historyEndAir = "003B200026"
         private val nullValue = "FFFFFFFF".hexStringToByteArray()
         private val ruuviAir = "Ruuvi Air"
 
@@ -495,21 +496,22 @@ class NordicGattManager(context: Context, val device: BluetoothDevice): BleManag
 
 
         const val DATA_FORMAT = 0xE1
-        const val TEMPERATURE_POSITION = 4
-        const val HUMIDITY_POSITION = 6
-        const val PRESSURE_POSITION = 8
-        const val PM1_POSITION = 10
-        const val PM25_POSITION = 12
-        const val PM4_POSITION = 14
-        const val PM10_POSITION = 16
-        const val CO2_POSITION = 18
-        const val VOC_POSITION = 20
-        const val NOX_POSITION = 21
-        const val LUMINOSITY_POSITION = 22
-        const val DBA_INST_POSITION = 25
-        const val DBA_AVG_POSITION = 26
-        const val DBA_PEAK_POSITION = 27
-        const val SEQUENCE_POSITION = 28
-        const val FLAGS_POSITION = 31
+        const val DATA_FORMAT_POSITION = 4
+        const val TEMPERATURE_POSITION = 5
+        const val HUMIDITY_POSITION = 7
+        const val PRESSURE_POSITION = 9
+        const val PM1_POSITION = 11
+        const val PM25_POSITION = 13
+        const val PM4_POSITION = 15
+        const val PM10_POSITION = 17
+        const val CO2_POSITION = 19
+        const val VOC_POSITION = 21
+        const val NOX_POSITION = 22
+        const val LUMINOSITY_POSITION = 23
+        const val DBA_INST_POSITION = 26
+        const val DBA_AVG_POSITION = 27
+        const val DBA_PEAK_POSITION = 28
+        const val SEQUENCE_POSITION = 29
+        const val FLAGS_POSITION = 32
     }
 }

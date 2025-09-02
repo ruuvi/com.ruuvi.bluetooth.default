@@ -15,9 +15,9 @@ class DecodeFormatE1: RuuviTagDecoder {
         val vocFlag = isBitSet(data[FLAGS_POSITION + offset], 6)
         val noxFlag = isBitSet(data[FLAGS_POSITION + offset], 7)
 
-        result.temperature = (((data[TEMPERATURE_POSITION + offset].toInt() shl 8) or
+        result.temperature = (((data[TEMPERATURE_POSITION + offset].toInt() and 0xFF) shl 8 or
                 (data[TEMPERATURE_POSITION + 1 + offset].toInt() and 0xFF)) / 200.0).roundHalfUp(4)
-        result.humidity = (((data[HUMIDITY_POSITION + offset].toInt() shl 8) or
+        result.humidity = (((data[HUMIDITY_POSITION + offset].toInt() and 0xFF) shl 8 or
                 (data[HUMIDITY_POSITION + 1 + offset].toInt() and 0xFF)) / 400.0).roundHalfUp(4)
         result.pressure = ((data[PRESSURE_POSITION + offset].toInt() and 0xFF) shl 8 or
                 (data[PRESSURE_POSITION + 1 + offset].toInt() and 0xFF)).toDouble() + 50000

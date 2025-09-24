@@ -53,7 +53,7 @@ class DecodeFormat6: RuuviTagDecoder {
     }
 
     companion object {
-        const val DATA_FORMAT = 0xF0
+        const val DATA_FORMAT = 0x06
         const val TEMPERATURE_POSITION = 1
         const val HUMIDITY_POSITION = 3
         const val PRESSURE_POSITION = 5

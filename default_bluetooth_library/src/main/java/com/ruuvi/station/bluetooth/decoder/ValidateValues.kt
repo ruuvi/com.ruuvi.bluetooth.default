@@ -27,7 +27,7 @@ const val MEASUREMENT_SEQUENCE_MINIMUM = 0
 const val MEASUREMENT_SEQUENCE_MAXIMUM = 65534
 
 const val PM_MINIMUM = 0.0
-const val PM_MAXIMUM = 1000.0
+const val PM_MAXIMUM = 10000.0
 
 const val CO2_MINIMUM = 0
 const val CO2_MAXIMUM = 40000
@@ -42,7 +42,7 @@ const val LUMINOSITY_MINIMUM = 0.0
 const val LUMINOSITY_MAXIMUM = 167772.14
 
 const val DBA_MINIMUM = 0.0
-const val DBA_MAXIMUM = 127.0
+const val DBA_MAXIMUM = 120.0
 
 fun validateValues(sensor: FoundRuuviTag) : FoundRuuviTag {
     sensor.temperature?.let {

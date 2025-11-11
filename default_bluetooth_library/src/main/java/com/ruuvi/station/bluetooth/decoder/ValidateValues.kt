@@ -27,7 +27,7 @@ const val MEASUREMENT_SEQUENCE_MINIMUM = 0
 const val MEASUREMENT_SEQUENCE_MAXIMUM = 65534
 
 const val PM_MINIMUM = 0.0
-const val PM_MAXIMUM = 10000.0
+const val PM_MAXIMUM = 6553.5
 
 const val CO2_MINIMUM = 0
 const val CO2_MAXIMUM = 40000

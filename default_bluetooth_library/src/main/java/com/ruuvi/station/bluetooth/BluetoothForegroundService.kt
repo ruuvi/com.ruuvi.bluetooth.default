@@ -8,7 +8,9 @@ import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.Service
 import android.content.Context
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
 import android.os.Handler
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import org.kodein.di.Kodein
@@ -18,19 +20,30 @@ import org.kodein.di.generic.instance
 import timber.log.Timber
 import java.util.*
 import kotlin.concurrent.schedule
+import kotlin.math.abs
 
 class BluetoothForegroundService : Service(), KodeinAware {
     override val kodein: Kodein by kodein()
     private val scannerSettings: ScannerSettings by instance()
     val bluetoothInteractor: BluetoothInteractor by instance()
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
 
     private var scanner = object : Runnable {
+        var lastWidgetUpdate = 0L
         override fun run() {
             Timber.d("Start scanning in foreground service")
-            bluetoothInteractor.startScan()
+            bluetoothInteractor.startScan(true)
             Timer(false).schedule(bluetoothInteractor.getWorkTime()) {
                 bluetoothInteractor.stopScanningFromBackground()
+            }
+            if (abs(Date().time - lastWidgetUpdate) > WIDGET_UPDATE_INTERVAL) {
+                scannerSettings.getSimpleWidgetUpdatePendingIntent()?.let {
+                    it.send()
+                }
+                scannerSettings.getComplexWidgetUpdatePendingIntent()?.let {
+                    it.send()
+                }
+                lastWidgetUpdate = Date().time
             }
             val interval = scannerSettings.getBackgroundScanIntervalMilliseconds()
             Timber.d("Scheduling scanning with interval = $interval")
@@ -60,9 +73,14 @@ class BluetoothForegroundService : Service(), KodeinAware {
 
         val interval = scannerSettings.getBackgroundScanIntervalMilliseconds()
         Timber.d("Scheduling scanning with interval = $interval")
-        handler.postDelayed(scanner, interval)
 
-        startForeground(ID, builder.build())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(ID, builder.build(), FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        } else {
+            startForeground(ID, builder.build())
+        }
+
+        handler.postDelayed(scanner, interval)
         return START_NOT_STICKY
     }
 
@@ -97,9 +115,11 @@ class BluetoothForegroundService : Service(), KodeinAware {
         const val ID = 1337
         const val CHANNEL_ID = "foreground_scanner_channel"
         const val CHANNEL_NAME = "RuuviStation foreground scanner"
+        const val WIDGET_UPDATE_INTERVAL = 5 * 60 * 1000
 
         fun start(context: Context) {
             val serviceIntent = Intent(context, BluetoothForegroundService::class.java)
+            Timber.d("starting FS from companion")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent)
             } else {

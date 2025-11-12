@@ -1,18 +1,32 @@
 package com.ruuvi.station.bluetooth
 
 import android.app.Application
+
 import android.content.Intent
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.ruuvi.station.bluetooth.contract.IRuuviGattListener
+import com.ruuvi.station.bluetooth.contract.IRuuviTagScanner
 import com.ruuvi.station.bluetooth.util.Foreground
 import com.ruuvi.station.bluetooth.util.ScannerSettings
 import timber.log.Timber
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 class BluetoothInteractor(
-        private val application: Application,
-        private val onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
-        val settings: ScannerSettings
+    private val application: Application,
+    private val onTagsFoundListener: IRuuviTagScanner.OnTagFoundListener,
+    val settings: ScannerSettings
 ) {
     private var isRunningInForeground = false
 
@@ -38,6 +52,23 @@ class BluetoothInteractor(
 
             if (settings.allowBackgroundScan()) {
                 startForegroundService()
+
+                val workRequest = PeriodicWorkRequestBuilder<BLEScanWorker>(
+                    15, TimeUnit.MINUTES // Android enforces minimum 15 min for Periodic
+                ).setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                        .setRequiresBatteryNotLow(false)
+                        .setRequiresCharging(false)
+                        .build()
+                ).build()
+
+                WorkManager.getInstance(application).enqueueUniquePeriodicWork(
+                    "BLEScanJob",
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    workRequest
+                )
+
                 if (!isApi31) startBackgroundScanning()
             } else {
                 Timber.d("background scanning disabled")
@@ -73,9 +104,9 @@ class BluetoothInteractor(
         ScanningPeriodicReceiver.start(application, settings.getBackgroundScanIntervalMilliseconds())
     }
 
-    fun startScan() {
+    fun startScan(background: Boolean = false) {
         Timber.d("startScan")
-        ruuviRangeNotifier.startScanning(onTagsFoundListener)
+        ruuviRangeNotifier.startScanning(onTagsFoundListener, background)
     }
 
     fun readLogs(id: String, from: Date?, listener: IRuuviGattListener): Boolean {

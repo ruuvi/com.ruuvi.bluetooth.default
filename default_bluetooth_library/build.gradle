@@ -9,9 +9,9 @@ android {
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 31
-        versionCode 10501
-        versionName "1.5.1"
+        targetSdkVersion 34
+        versionCode 10808
+        versionName "1.8.8"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -37,9 +37,6 @@ def kodein_version = "6.5.0"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    implementation 'com.github.ruuvi:com.ruuvi.bluetooth:1.4.6'
-    //implementation project(':bluetooth_library')
-
     implementation 'com.neovisionaries:nv-bluetooth:1.8'
     implementation 'no.nordicsemi.android:ble-ktx:2.7.3'
 
@@ -50,6 +47,7 @@ dependencies {
     implementation 'net.swiftzer.semver:semver:1.1.1'
 
     implementation 'com.jakewharton.timber:timber:4.7.1'
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
 
     implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
     implementation "org.kodein.di:kodein-di-framework-android-x:$kodein_version"

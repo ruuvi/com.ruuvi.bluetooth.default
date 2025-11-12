@@ -5,14 +5,13 @@ import com.neovisionaries.bluetooth.ble.advertising.ADManufacturerSpecific;
 import com.neovisionaries.bluetooth.ble.advertising.ADPayloadParser;
 import com.neovisionaries.bluetooth.ble.advertising.ADStructure;
 import com.neovisionaries.bluetooth.ble.advertising.EddystoneURL;
-import com.ruuvi.station.bluetooth.FoundRuuviTag;
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import timber.log.Timber;
 
 
 public class LeScanResult {
-    private static final Integer PROTOCOL_OFFSET = 7;
     public BluetoothDevice device;
     public byte[] scanData;
     public int rssi;
@@ -78,6 +77,11 @@ public class LeScanResult {
                         break;
                     default: {
                         Timber.d("Unknown tag protocol version: %1$s (PROTOCOL_OFFSET: %2$s) sensor %3$s", protocolVersion, offset, id);
+                        StringBuilder bytes = new StringBuilder();
+                        for (int i = 0; i < rawData.length; i++) {
+                            bytes.append(rawData[i] & 0xff).append(" ");
+                        }
+                        Timber.d("Bytes for %1$s: %2$s", id, bytes);
                     }
                 }
             } else {
@@ -106,42 +110,6 @@ public class LeScanResult {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private static String encode(byte[] data) {
-        char[] tbl = {
-                'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-                'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-                'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
-
-        StringBuilder buffer = new StringBuilder();
-        int pad = 0;
-        for (int i = 0; i < data.length; i += 3) {
-
-            int b = ((data[i] & 0xFF) << 16) & 0xFFFFFF;
-            if (i + 1 < data.length) {
-                b |= (data[i + 1] & 0xFF) << 8;
-            } else {
-                pad++;
-            }
-            if (i + 2 < data.length) {
-                b |= (data[i + 2] & 0xFF);
-            } else {
-                pad++;
-            }
-
-            for (int j = 0; j < 4 - pad; j++) {
-                int c = (b & 0xFC0000) >> 18;
-                buffer.append(tbl[c]);
-                b <<= 6;
-            }
-        }
-        for (int j = 0; j < pad; j++) {
-            buffer.append("=");
-        }
-
-        return buffer.toString();
     }
 
     private static byte[] decode(String data) {
@@ -197,11 +165,5 @@ public class LeScanResult {
             i += 4;
         }
         return buffer.toByteArray();
-    }
-
-    public interface RuuviTagDecoder {
-
-        FoundRuuviTag decode(byte[] data, int offset);
-
     }
 }

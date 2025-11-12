@@ -1,10 +1,10 @@
 package com.ruuvi.station.bluetooth.decoder;
 
-import com.ruuvi.station.bluetooth.FoundRuuviTag;
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-class DecodeFormat2and4 implements LeScanResult.RuuviTagDecoder {
+class DecodeFormat2and4 implements RuuviTagDecoder {
 
     @Override
     public FoundRuuviTag decode(byte[] data, int offset) {
@@ -22,7 +22,6 @@ class DecodeFormat2and4 implements LeScanResult.RuuviTagDecoder {
 
         tag.setTemperature(round(tag.getTemperature() != null ? tag.getTemperature() : 0.0));
         tag.setHumidity(round(tag.getHumidity() != null ? tag.getHumidity() : 0.0));
-        tag.setPressure(round(tag.getPressure() != null ? tag.getPressure() : 0.0));
         return tag;
     }
 

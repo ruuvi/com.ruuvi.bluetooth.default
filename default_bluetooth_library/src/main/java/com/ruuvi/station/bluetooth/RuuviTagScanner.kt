@@ -5,8 +5,12 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
 import android.content.Context
+import android.os.Build
 import android.os.ParcelUuid
-import com.ruuvi.station.bluetooth.decoder.LeScanResult
+import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
+import com.ruuvi.station.bluetooth.contract.IRuuviGattListener
+import com.ruuvi.station.bluetooth.contract.IRuuviTagScanner
+import com.ruuvi.station.bluetooth.decoder.BleScanResult
 import com.ruuvi.station.bluetooth.gatt.NordicGattManager
 import timber.log.Timber
 import java.util.*
@@ -24,14 +28,35 @@ class RuuviTagScanner(
 
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var scanner: BluetoothLeScanner? = null
-    private val devices: ConcurrentMap<String, LeScanResult> = ConcurrentHashMap()
+    private val devices: ConcurrentMap<String, BleScanResult> = ConcurrentHashMap()
     private val gattManagers: ConcurrentMap<String, NordicGattManager> = ConcurrentHashMap()
+    private var isLeExtendedAdvertisingSupported: Boolean = false
 
     private val scanSettings: ScanSettings
-        get() = ScanSettings.Builder()
-                .setReportDelay(0)
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .build()
+        get() {
+            val scanSettings =
+                ScanSettings.Builder()
+                        .setReportDelay(0)
+                        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                scanSettings.setLegacy(false)
+            }
+            return scanSettings.build()
+        }
+
+    private val scanSettingsBackground: ScanSettings
+        get() {
+            val scanSettings =
+                ScanSettings.Builder()
+                    .setReportDelay(0)
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                scanSettings.setLegacy(false)
+            }
+            return scanSettings.build()
+        }
 
     private val isScanning = AtomicBoolean(false)
     private val sequenceMap = HashMap<String, Int>()
@@ -45,12 +70,16 @@ class RuuviTagScanner(
         Timber.d("Trying to initialize bluetooth adapter")
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            isLeExtendedAdvertisingSupported = bluetoothManager.adapter.isLeExtendedAdvertisingSupported
+        }
         scanner = bluetoothAdapter?.bluetoothLeScanner
     }
 
     @SuppressLint("MissingPermission")
     override fun startScanning(
-            foundListener: IRuuviTagScanner.OnTagFoundListener
+        foundListener: IRuuviTagScanner.OnTagFoundListener,
+        background: Boolean
     ) {
         Timber.d("[$from] startScanning")
 
@@ -62,6 +91,12 @@ class RuuviTagScanner(
         if (!isScanning.compareAndSet(false, true)) {
             Timber.d("Already scanning!")
             return
+        }
+
+        val scanSettings = if (background) {
+            scanSettingsBackground
+        } else {
+            scanSettings
         }
 
         this.tagListener = foundListener
@@ -111,6 +146,7 @@ class RuuviTagScanner(
         Timber.d("disconnect $macAddress")
         gattManagers[macAddress]?.let { manager ->
             manager.executeDisconnect()
+            manager.setCallBack(null)
             return true
         }
         return false
@@ -129,18 +165,27 @@ class RuuviTagScanner(
             Timber.d("[$from] onScanResult $result")
             super.onScanResult(callbackType, result)
             result?.let {
-                val leresult = LeScanResult()
-                leresult.device = it.device
-                leresult.rssi = it.rssi
-                leresult.scanData = it.scanRecord?.bytes
+                val leresult = BleScanResult(
+                    it.device,
+                    it.rssi,
+                    it.scanRecord?.bytes,
+                    isLeExtendedAdvertisingSupported
+                )
                 val parsed = leresult.parse()
+
+                var connectable = it.scanRecord?.deviceName != null
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !connectable) {
+                    connectable = it.isConnectable
+                }
+
+                if (connectable) {
+                    devices[leresult.device.address] = leresult
+                } else {
+                    connectable = gattManagers[it.device.address]?.isConnected == true
+                }
+
                 if (parsed != null) {
-                    var connectable = it.scanRecord?.deviceName != null
-                    if (connectable) {
-                        devices[leresult.device.address] = leresult
-                    } else if (gattManagers[it.device.address]?.isConnected == true) {
-                        connectable = true
-                    }
                     parsed.connectable = connectable
                     sendDataToListener(parsed)
                 }

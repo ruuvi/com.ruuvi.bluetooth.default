@@ -171,7 +171,7 @@ class DecodeFormat6: RuuviTagDecoder {
         const val MOVEMENT_MAXIMUM = 254
 
         const val MEASUREMENT_SEQUENCE_MINIMUM = 0
-        const val MEASUREMENT_SEQUENCE_MAXIMUM = 65534
+        const val MEASUREMENT_SEQUENCE_MAXIMUM = 255
 
         const val PM_MINIMUM = 0.0
         const val PM_MAXIMUM = 6553.4

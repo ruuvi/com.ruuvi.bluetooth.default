@@ -39,7 +39,7 @@ class RuuviTagScanner(
                         .setReportDelay(0)
                         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isLeExtendedAdvertisingSupported) {
                 scanSettings.setLegacy(false)
             }
             return scanSettings.build()
@@ -52,7 +52,7 @@ class RuuviTagScanner(
                     .setReportDelay(0)
                     .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isLeExtendedAdvertisingSupported) {
                 scanSettings.setLegacy(false)
             }
             return scanSettings.build()

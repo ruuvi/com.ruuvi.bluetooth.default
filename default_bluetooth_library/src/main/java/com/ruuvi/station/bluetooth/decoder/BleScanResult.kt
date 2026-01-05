@@ -11,12 +11,12 @@ class BleScanResult (
     val device: BluetoothDevice,
     val rssi: Int,
     val scanData: ByteArray?,
-    private val isLeExtendedAdvertisingSupported: Boolean
+    private val skipLegacyForAir: Boolean
 ){
     fun parse(): FoundRuuviTag? {
         var tag: FoundRuuviTag? = null
 
-        var skipLegacy = isLeExtendedAdvertisingSupported
+        var skipLegacy = skipLegacyForAir
 
         try {
             val structures = ADPayloadParser.getInstance().parse(scanData)

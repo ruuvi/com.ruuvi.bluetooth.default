@@ -7,6 +7,7 @@ import android.bluetooth.le.*
 import android.content.Context
 import android.os.Build
 import android.os.ParcelUuid
+import android.os.SystemClock
 import com.ruuvi.station.bluetooth.contract.FoundRuuviTag
 import com.ruuvi.station.bluetooth.contract.IRuuviGattListener
 import com.ruuvi.station.bluetooth.contract.IRuuviTagScanner
@@ -30,7 +31,7 @@ class RuuviTagScanner(
     private var scanner: BluetoothLeScanner? = null
     private val devices: ConcurrentMap<String, BleScanResult> = ConcurrentHashMap()
     private val gattManagers: ConcurrentMap<String, NordicGattManager> = ConcurrentHashMap()
-    private var isLeExtendedAdvertisingSupported: Boolean = false
+    private val legacyStates = mutableMapOf<String, AdvState>()
 
     private val scanSettings: ScanSettings
         get() {
@@ -70,9 +71,6 @@ class RuuviTagScanner(
         Timber.d("Trying to initialize bluetooth adapter")
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            isLeExtendedAdvertisingSupported = bluetoothManager.adapter.isLeExtendedAdvertisingSupported
-        }
         scanner = bluetoothAdapter?.bluetoothLeScanner
     }
 
@@ -165,11 +163,28 @@ class RuuviTagScanner(
             Timber.d("[$from] onScanResult $result")
             super.onScanResult(callbackType, result)
             result?.let {
+                val now = SystemClock.elapsedRealtime()
+                val state = legacyStates.getOrPut(it.device.address) { AdvState(firstSeenMs = now) }
+
+                val isLegacy = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    result.isLegacy
+                } else {
+                    true
+                }
+
+                val skipLegacy = if (isLegacy) {
+                    (state.lastExtendedMs != 0L) || (now - state.firstSeenMs) < LEGACY_GRACE_MS
+                } else {
+                    state.lastExtendedMs = now
+                    true
+                }
+
+
                 val leresult = BleScanResult(
                     it.device,
                     it.rssi,
                     it.scanRecord?.bytes,
-                    isLeExtendedAdvertisingSupported
+                    skipLegacy
                 )
                 val parsed = leresult.parse()
 
@@ -233,3 +248,10 @@ class RuuviTagScanner(
         return filters
     }
 }
+
+private data class AdvState(
+    var firstSeenMs: Long = 0L,
+    var lastExtendedMs: Long = 0L
+)
+
+private const val LEGACY_GRACE_MS = 3_000L

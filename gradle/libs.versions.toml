@@ -1,0 +1,26 @@
+[versions]
+bleKtx = "2.11.0"
+coreKtx = "1.19.0"
+googleServices = "4.5.0"
+gradle = "9.2.1"
+kodeinDi = "7.33.0"
+kotlin = "2.4.20"
+nvBluetooth = "1.8"
+semver = "2.1.0"
+timber = "5.0.1"
+workRuntimeKtx = "2.11.2"
+
+[libraries]
+ble-ktx = { group = "no.nordicsemi.android", name = "ble-ktx", version.ref = "bleKtx" }
+core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+google-services = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
+gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "gradle" }
+kodein-di-framework-android-x = { group = "org.kodein.di", name = "kodein-di-framework-android-x", version.ref = "kodeinDi" }
+kodein-di-framework-android-core = { group = "org.kodein.di", name = "kodein-di-framework-android-core", version.ref = "kodeinDi" }
+kodein-di = { group = "org.kodein.di", name = "kodein-di", version.ref = "kodeinDi" }
+kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
+nv-bluetooth = { group = "com.neovisionaries", name = "nv-bluetooth", version.ref = "nvBluetooth" }
+semver = { group = "net.swiftzer.semver", name = "semver", version.ref = "semver" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }

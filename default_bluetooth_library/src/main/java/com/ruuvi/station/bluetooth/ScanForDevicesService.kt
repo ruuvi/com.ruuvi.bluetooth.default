@@ -3,17 +3,17 @@ package com.ruuvi.station.bluetooth
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.JobIntentService
-import org.kodein.di.Kodein
-import org.kodein.di.KodeinAware
-import org.kodein.di.android.kodein
-import org.kodein.di.generic.instance
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.android.closestDI
+import org.kodein.di.instance
 import timber.log.Timber
 import java.util.*
 import kotlin.concurrent.schedule
 
-class ScanForDevicesService : JobIntentService(), KodeinAware {
+class ScanForDevicesService : JobIntentService(), DIAware {
 
-    override val kodein: Kodein by kodein()
+    override val di: DI by closestDI()
     private val bluetoothInteractor: BluetoothInteractor by instance()
 
     override fun onHandleWork(p0: Intent) {

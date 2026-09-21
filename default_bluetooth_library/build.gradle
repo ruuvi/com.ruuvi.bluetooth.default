@@ -37,6 +37,8 @@ def kodein_version = "6.5.0"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
+    testImplementation 'junit:junit:4.13.2'
+
     implementation 'com.neovisionaries:nv-bluetooth:1.8'
     implementation 'no.nordicsemi.android:ble-ktx:2.7.3'
 

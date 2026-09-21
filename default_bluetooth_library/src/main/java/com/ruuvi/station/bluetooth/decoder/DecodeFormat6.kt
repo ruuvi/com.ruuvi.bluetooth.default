@@ -179,10 +179,10 @@ class DecodeFormat6: RuuviTagDecoder {
         const val CO2_MINIMUM = 0
         const val CO2_MAXIMUM = 40000
 
-        const val VOC_MINIMUM = 1
+        const val VOC_MINIMUM = 0
         const val VOC_MAXIMUM = 500
 
-        const val NOX_MINIMUM = 1
+        const val NOX_MINIMUM = 0
         const val NOX_MAXIMUM = 500
 
         const val LUMINOSITY_MINIMUM = 0.0

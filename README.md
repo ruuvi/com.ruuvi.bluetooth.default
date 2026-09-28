@@ -25,12 +25,16 @@ dependencies {
 }
 ```
 
-Add bluetooth and location permission in AndroidManifest.xml
+Add Bluetooth and location permissions in AndroidManifest.xml. On Android 12+ also request the scan/connect permissions as needed.
 ```xml
-<uses-permission android:name="android.permission.BLUETOOTH" />
-<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 ```
+
+Note: The project was verified with a successful Gradle build of the library module.
 
 You are now ready to use the library. You can get started by initializing the RuuviRangeNotifier, requesting location permission and start the scanning. You activity could look something like this:
 ```kotlin

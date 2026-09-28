@@ -1,14 +1,14 @@
 [versions]
 bleKtx = "2.11.0"
-coreKtx = "1.19.0"
+coreKtx = "1.19.1"
 googleServices = "4.5.0"
-gradle = "9.2.1"
+gradle = "9.4.1"
 kodeinDi = "7.33.0"
 kotlin = "2.4.20"
 nvBluetooth = "1.8"
 semver = "2.1.0"
 timber = "5.0.1"
-workRuntimeKtx = "2.11.2"
+workRuntimeKtx = "2.12.0"
 
 [libraries]
 ble-ktx = { group = "no.nordicsemi.android", name = "ble-ktx", version.ref = "bleKtx" }

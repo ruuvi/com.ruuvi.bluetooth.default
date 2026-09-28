@@ -2,16 +2,15 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
-    buildToolsVersion '30.0.3'
+    compileSdk 37
 
     namespace 'com.ruuvi.station.bluetooth.def'
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 34
-        versionCode 10810
-        versionName "1.8.10"
+        targetSdkVersion 37
+        versionCode 10811
+        versionName "1.8.11"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -19,16 +18,22 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "11"
+    }
+    testOptions {
+        targetSdk 37
+    }
+    lint {
+        targetSdk 37
     }
 }
 
@@ -37,18 +42,18 @@ def kodein_version = "6.5.0"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    implementation 'com.neovisionaries:nv-bluetooth:1.8'
-    implementation 'no.nordicsemi.android:ble-ktx:2.7.3'
+    implementation libs.nv.bluetooth
+    implementation libs.ble.ktx
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation libs.kotlin.stdlib
 
-    implementation 'com.jakewharton.timber:timber:4.7.1'
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'net.swiftzer.semver:semver:1.1.1'
+    implementation libs.timber
+    implementation libs.core.ktx
+    implementation libs.semver
 
-    implementation 'com.jakewharton.timber:timber:4.7.1'
-    implementation("androidx.work:work-runtime-ktx:2.10.1")
+    implementation libs.timber
+    implementation(libs.work.runtime.ktx)
 
-    implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
-    implementation "org.kodein.di:kodein-di-framework-android-x:$kodein_version"
+    implementation libs.kodein.di
+    implementation libs.kodein.di.framework.android.x
 }

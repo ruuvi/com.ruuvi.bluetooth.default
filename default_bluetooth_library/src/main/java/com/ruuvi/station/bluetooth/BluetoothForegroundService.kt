@@ -13,17 +13,17 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.ruuvi.station.bluetooth.util.ScannerSettings
-import org.kodein.di.Kodein
-import org.kodein.di.KodeinAware
-import org.kodein.di.android.kodein
-import org.kodein.di.generic.instance
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.android.closestDI
+import org.kodein.di.instance
 import timber.log.Timber
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.math.abs
 
-class BluetoothForegroundService : Service(), KodeinAware {
-    override val kodein: Kodein by kodein()
+class BluetoothForegroundService : Service(), DIAware {
+    override val di: DI by closestDI()
     private val scannerSettings: ScannerSettings by instance()
     val bluetoothInteractor: BluetoothInteractor by instance()
     private val handler = Handler(Looper.getMainLooper())
@@ -37,12 +37,8 @@ class BluetoothForegroundService : Service(), KodeinAware {
                 bluetoothInteractor.stopScanningFromBackground()
             }
             if (abs(Date().time - lastWidgetUpdate) > WIDGET_UPDATE_INTERVAL) {
-                scannerSettings.getSimpleWidgetUpdatePendingIntent()?.let {
-                    it.send()
-                }
-                scannerSettings.getComplexWidgetUpdatePendingIntent()?.let {
-                    it.send()
-                }
+                scannerSettings.getSimpleWidgetUpdatePendingIntent()?.send()
+                scannerSettings.getComplexWidgetUpdatePendingIntent()?.send()
                 lastWidgetUpdate = Date().time
             }
             val interval = scannerSettings.getBackgroundScanIntervalMilliseconds()
